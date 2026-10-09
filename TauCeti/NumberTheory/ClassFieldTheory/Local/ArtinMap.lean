@@ -186,17 +186,6 @@ theorem denseRange_artinMap : DenseRange (artinMap K) := by
   exact (ContinuousMulEquiv.surjective _).denseRange.comp
     (localClassFormation K).denseRange_absoluteArtinMap (map_continuous _)
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The unit `x ∈ Kˣ`, as an element of the ground level of the top layer, read in the ground level
-of the layer `V ◁ G_K`, is `localGroundEquiv K V x`. -/
-private theorem groundEquivOfOpenNormal_unitsLevelEquiv
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) (x : Kˣ) :
-    groundEquivOfOpenNormal (unitsFormation K) V
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
-          (Additive.ofMul x)) =
-      localGroundEquiv K V (Additive.ofMul x) :=
-  Subtype.ext (by simp)
-
 /-- **The preimage of an open subgroup under the absolute local Artin map is a norm subgroup.**
 For every open subgroup `U` of `G_K^ab` there is an open normal subgroup `V` of `G_K`, cutting out
 the finite Galois extension `classField K V`, such that the Artin symbol of `x ∈ Kˣ` lies in `U`
