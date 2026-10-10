@@ -289,19 +289,19 @@ noncomputable def finiteChartSectionsEquiv :
       holomorphyRing {P : Place k F | x ∈ P.integers} :=
   ((ιFinite hF hx).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv
 
-/-- On the finite chart, the constants pulled back along the structure morphism are the constants
-of `𝒪_x`. -/
-theorem finiteChartSectionsEquiv_appLE (c : k) :
-    finiteChartSectionsEquiv hF hx
-        (((Scheme.ΓSpecIso (.of k)).inv ≫
-          (twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top).hom c) =
-      algebraMap k _ c := by
-  suffices h : (Scheme.ΓSpecIso (.of k)).inv ≫
-      (twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top ≫
+/-- On the finite chart, the functions on `Spec k` pulled back along the structure morphism are
+the constants of `𝒪_x`. -/
+@[simp]
+theorem finiteChartSectionsEquiv_appLE (a : Γ(Spec (.of k), ⊤)) :
+    finiteChartSectionsEquiv hF hx ((twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top a) =
+      algebraMap k _ ((Scheme.ΓSpecIso (.of k)).hom a) := by
+  suffices h : (twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top ≫
         ((ιFinite hF hx).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      CommRingCat.ofHom (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers})) from
-    congr($h c)
-  rw [Scheme.Hom.appIso_hom', reassoc_of% Scheme.Hom.appLE_comp_appLE (ιFinite hF hx)
+      (Scheme.ΓSpecIso (.of k)).hom ≫
+        CommRingCat.ofHom (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers})) from
+    congr($h a)
+  rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
+    reassoc_of% Scheme.Hom.appLE_comp_appLE (ιFinite hF hx)
     (twoChartModel hF hx ↘ Spec (.of k)) ⊤ (ιFinite hF hx ''ᵁ ⊤) ⊤ le_top
     (Scheme.Hom.preimage_image_eq _ _).ge]
   -- The composite of the chart with the structure morphism is `Spec` of the inclusion of `k`;
@@ -329,7 +329,7 @@ noncomputable def functionFieldEquiv (hxt : Transcendental k x) :
         RingHom.comp_apply]
       -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
       refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
-      rw [finiteChartSectionsEquiv_appLE]
+      rw [CommRingCat.comp_apply, finiteChartSectionsEquiv_appLE, Iso.inv_hom_id_apply]
       exact (IsScalarTower.algebraMap_apply k _ F c).symm
 
 /-- `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv` sends the germ of a function on
