@@ -17,8 +17,8 @@ import TauCeti.Topology.KrullDimension
 /-!
 # Dominant morphisms to curves are flat
 
-A dominant morphism `f : X ⟶ Y` from an integral scheme to an integral scheme whose local rings
-are valuation rings is flat. At a point `x` of `X`, the stalk map `𝒪_{Y,f x} → 𝒪_{X,x}` is
+A dominant morphism `f : X ⟶ Y` from an integral scheme to a scheme whose local rings are
+valuation rings is flat. At a point `x` of `X`, the stalk map `𝒪_{Y,f x} → 𝒪_{X,x}` is
 injective, because a section of `𝒪_Y` killed by `f` vanishes on the dense image of `f`; so the
 domain `𝒪_{X,x}` is a torsion-free module over the valuation ring `𝒪_{Y,f x}`, and torsion-free
 modules over a valuation ring are flat.
@@ -39,8 +39,8 @@ the target is not reduced, although its only local ring is a principal ideal rin
 
 * `AlgebraicGeometry.Scheme.Hom.stalkMap_injective_of_isDominant`: the stalk maps of a dominant
   morphism from an integral scheme to a reduced scheme are injective.
-* `AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_valuationRing`: a dominant morphism of
-  integral schemes whose target has valuation rings as local rings is flat.
+* `AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_valuationRing`: a dominant morphism from an
+  integral scheme to a scheme whose local rings are valuation rings is flat.
 * `AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_smooth`: a dominant morphism from an integral
   scheme to a scheme smooth over a field, of dimension at most one, is flat.
 
@@ -82,36 +82,33 @@ theorem stalkMap_injective_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsReduced
   exact this
 
 /-- At a point where the target has a valuation ring as local ring, the stalk map of a dominant
-morphism of integral schemes is flat. -/
-theorem flat_stalkMap_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsIntegral Y] [IsDominant f]
-    (x : X) [ValuationRing (Y.presheaf.stalk (f x))] : (f.stalkMap x).hom.Flat := by
+morphism from an integral scheme to a reduced scheme is flat. -/
+theorem flat_stalkMap_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsReduced Y] [IsDominant f]
+    (x : X) [IsDomain (Y.presheaf.stalk (f x))] [ValuationRing (Y.presheaf.stalk (f x))] :
+    (f.stalkMap x).hom.Flat := by
   algebraize [(f.stalkMap x).hom]
   refine Module.Flat.flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout.mpr fun r hr ↦ ?_
   exact mem_nonZeroDivisors_of_ne_zero
     ((map_ne_zero_iff _ (f.stalkMap_injective_of_isDominant x)).mpr hr)
 
-/-- **A dominant morphism to a scheme with valuation rings as local rings is flat.** If `X` and
-`Y` are integral and every local ring of `Y` is a valuation ring, as for a Dedekind scheme, then a
+/-- **A dominant morphism to a scheme with valuation rings as local rings is flat.** If `X` is
+integral and every local ring of `Y` is a valuation ring, as for a Dedekind scheme, then a
 dominant morphism `X ⟶ Y` is flat. -/
-theorem flat_of_isDominant_of_valuationRing (f : X ⟶ Y) [IsIntegral X] [IsIntegral Y]
-    [IsDominant f] [∀ y : Y, ValuationRing (Y.presheaf.stalk y)] : Flat f :=
+theorem flat_of_isDominant_of_valuationRing (f : X ⟶ Y) [IsIntegral X] [IsDominant f]
+    [∀ y : Y, IsDomain (Y.presheaf.stalk y)] [∀ y : Y, ValuationRing (Y.presheaf.stalk y)] :
+    Flat f :=
+  have : IsReduced Y := isReduced_of_isReduced_stalk Y
   .of_stalkMap f fun x ↦ f.flat_stalkMap_of_isDominant x
 
 /-- **A dominant morphism to a smooth curve over a field is flat.** If `Y` is smooth over a field
 `K` with all fibres of dimension at most one, then every dominant morphism from an integral scheme
-to `Y` is flat. The local rings of `Y` are regular of dimension at most one, hence valuation rings,
-and `Y` is integral, being reduced and the closure of the image of the irreducible scheme `X`. -/
+to `Y` is flat. The local rings of `Y` are regular of dimension at most one, hence valuation
+rings. -/
 theorem flat_of_isDominant_of_smooth {K : Type u} [Field K] (f : X ⟶ Y)
     (g : Y ⟶ Spec (.of K)) [Smooth g] [RelativeDimensionLE 1 g] [IsIntegral X] [IsDominant f] :
     Flat f := by
   have : IsLocallyNoetherian Y := LocallyOfFiniteType.isLocallyNoetherian g
   have : ∀ y : Y, IsRegularLocalRing (Y.presheaf.stalk y) := isRegularLocalRing_stalk_of_smooth g
-  have : IsReduced Y := isReduced_of_isReduced_stalk Y
-  have : IrreducibleSpace Y := by
-    rw [irreducibleSpace_def]
-    have h := ((IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn).closure
-    rwa [Set.image_univ, f.denseRange.closure_range] at h
-  have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   have hdim : topologicalKrullDim Y ≤ 1 := (relativeDimensionLE_iff_of_field g).mp inferInstance
   have : ∀ y : Y, ValuationRing (Y.presheaf.stalk y) := fun y ↦
     IsRegularLocalRing.valuationRing_of_ringKrullDim_le_one <| by
