@@ -53,6 +53,8 @@ noncomputable def opNorm : UnitarilyInvariantSeminorm 𝕜 E F where
 
 variable {𝕜 E F}
 
+/-- The operator-norm seminorm evaluates to the operator norm of the associated continuous linear
+map. -/
 @[simp]
 theorem opNorm_apply (A : E →ₗ[𝕜] F) : opNorm 𝕜 E F A = ‖LinearMap.toContinuousLinearMap A‖ :=
   (rfl)

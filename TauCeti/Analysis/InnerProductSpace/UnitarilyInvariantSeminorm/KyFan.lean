@@ -67,6 +67,8 @@ noncomputable def nuclear : UnitarilyInvariantSeminorm 𝕜 E F :=
 
 variable {𝕜 E F}
 
+/-- The `k`-th Ky Fan seminorm evaluates to the sum `σ₀(A) + ⋯ + σₖ₋₁(A)` of the `k` largest
+singular values. -/
 @[simp]
 theorem kyFan_apply (k : ℕ) (A : E →ₗ[𝕜] F) : kyFan 𝕜 E F k A = A.kyFanSum k :=
   (rfl)
