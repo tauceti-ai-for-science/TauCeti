@@ -25,7 +25,9 @@ the residue cubic
   `P(T) = T³ + (a₂/ϖ) T² + (a₄/ϖ²) T + a₆/ϖ³` over `k`.
 
 This file treats the branch of the algorithm in which `P` has a double root that is not a triple
-root (Step 7), where the reduction symbol is `Iₙ*` for some `n ≥ 1`.
+root (Step 7). In Tate's algorithm this branch has reduction symbol `Iₙ*` for some `n ≥ 1`; this
+file formalizes the reduction steps and the termination of the subprocedure, not the
+identification of the reduction symbol.
 
 Translating `x ↦ x + r` moves the double root to `T = 0`
 (`WeierstrassCurve.exists_variableChange_not_sq_dvd_a₂_and_pow_dvd_a₄_a₆`). Then `ϖ` divides `a₂`
@@ -34,13 +36,14 @@ equation is in the normal form of stage `n = 1` of the following subprocedure. A
 equation satisfies `ϖ ∣ a₁`, `ϖ ∥ a₂` and
 
 * for `n = 2k + 1` odd: `ϖ^(k+2) ∣ a₃`, `ϖ^(k+3) ∣ a₄`, `ϖ^(2k+4) ∣ a₆`. If the quadratic
-  `Y² + (a₃/ϖ^(k+2)) Y − a₆/ϖ^(2k+4)` has distinct roots, that is if `ϖ^(2k+5) ∤ b₆`, the reduction
-  symbol is `Iₙ*`. Otherwise a translation `y ↦ y + t` moves its double root to `0`
-  (`WeierstrassCurve.exists_pow_dvd_and_variableChange_pow_dvd_a₃_a₆`) and gives stage `n + 1`;
+  `Y² + (a₃/ϖ^(k+2)) Y − a₆/ϖ^(2k+4)` has distinct roots, that is if `ϖ^(2k+5) ∤ b₆`, the
+  subprocedure stops (Tate's algorithm then assigns `Iₙ*`). Otherwise a translation `y ↦ y + t`
+  moves its double root to `0` (`WeierstrassCurve.exists_pow_dvd_and_variableChange_pow_dvd_a₃_a₆`)
+  and gives stage `n + 1`;
 * for `n = 2k + 2` even: `ϖ^(k+3) ∣ a₃`, `ϖ^(k+3) ∣ a₄`, `ϖ^(2k+5) ∣ a₆`. If the quadratic
   `(a₂/ϖ) X² + (a₄/ϖ^(k+3)) X + a₆/ϖ^(2k+5)` has distinct roots, that is if
-  `ϖ^(2k+7) ∤ discrim a₂ a₄ a₆ = a₄² − 4 a₂ a₆`, the reduction symbol is `Iₙ*`. Otherwise a
-  translation `x ↦ x + r` moves its double root to `0`
+  `ϖ^(2k+7) ∤ discrim a₂ a₄ a₆ = a₄² − 4 a₂ a₆`, the subprocedure stops (Tate's algorithm then
+  assigns `Iₙ*`). Otherwise a translation `x ↦ x + r` moves its double root to `0`
   (`WeierstrassCurve.exists_pow_dvd_and_variableChange_pow_dvd_a₄_a₆`) and gives stage `n + 1`.
 
 Each stage forces `ϖ^(n+6) ∣ Δ`, and translations do not change `Δ`, so the subprocedure stops
@@ -278,11 +281,10 @@ private theorem IsOddStage.exists_isEvenStage [PerfectField (ResidueField R)]
     (hb₆ : ϖ ^ (2 * k + 5) ∣ W.b₆) : ∃ t : R, IsEvenStage ϖ k (VariableChange.mk 1 0 0 t • W) := by
   obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := hW
   obtain ⟨t, ht, h₃', h₆'⟩ := exists_pow_dvd_and_variableChange_pow_dvd_a₃_a₆ hϖ W (m := k + 2) h₃
-    (by rwa [show 2 * (k + 2) = 2 * k + 4 by ring])
-    (by rwa [show 2 * (k + 2) + 1 = 2 * k + 5 by ring])
+    (by simpa [mul_add] using h₆) (by simpa [mul_add] using hb₆)
   refine ⟨t, by simpa [variableChange_a₁] using h₁, by simpa [variableChange_a₂] using h₂,
     by simpa [variableChange_a₂] using h₂', h₃', ?_,
-    by rwa [show 2 * k + 5 = 2 * (k + 2) + 1 by ring]⟩
+    by simpa [mul_add] using h₆'⟩
   have : (VariableChange.mk 1 0 0 t • W).a₄ = W.a₄ - t * W.a₁ := by simp [variableChange_a₄]
   rw [this]
   exact dvd_sub h₄ (pow_succ ϖ (k + 2) ▸ mul_dvd_mul ht h₁)
@@ -295,13 +297,12 @@ private theorem IsEvenStage.exists_isOddStage [PerfectField (ResidueField R)]
     ∃ r : R, IsOddStage ϖ (k + 1) (VariableChange.mk 1 r 0 0 • W) := by
   obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := hW
   obtain ⟨r, hr, h₄', h₆'⟩ := exists_pow_dvd_and_variableChange_pow_dvd_a₄_a₆ hϖ W (m := k + 2)
-    (by omega) h₂ h₂' h₄ (by rwa [show 2 * (k + 2) + 1 = 2 * k + 5 by ring])
-    (by rwa [show 2 * (k + 2) + 3 = 2 * k + 7 by ring])
+    (by omega) h₂ h₂' h₄ (by simpa [mul_add] using h₆) (by simpa [mul_add] using hd)
   have h3r : ϖ ^ 2 ∣ 3 * r := ((pow_dvd_pow ϖ (by omega)).trans hr).mul_left 3
   have hV₂ : (VariableChange.mk 1 r 0 0 • W).a₂ = W.a₂ + 3 * r := by simp [variableChange_a₂]
   have hV₃ : (VariableChange.mk 1 r 0 0 • W).a₃ = W.a₃ + r * W.a₁ := by simp [variableChange_a₃]
   refine ⟨r, by simpa [variableChange_a₁] using h₁, ?_, ?_, ?_, h₄',
-    by rwa [show 2 * (k + 1) + 4 = 2 * (k + 2) + 2 by ring]⟩
+    by simpa [mul_add] using h₆'⟩
   · rw [hV₂]
     exact dvd_add h₂ ((dvd_pow_self ϖ two_ne_zero).trans h3r)
   · rw [hV₂]
@@ -316,7 +317,8 @@ a translation `x ↦ x + r`, `y ↦ y + t` over `R` produces an equation with `�
 `ϖ² ∤ a₂` on which the subprocedure stops, at an odd stage `n = 2k + 1`:
 `ϖ^(k+2) ∣ a₃`, `ϖ^(k+3) ∣ a₄`, `ϖ^(2k+4) ∣ a₆` and `ϖ^(2k+5) ∤ b₆`; or at an even stage
 `n = 2k + 2`: `ϖ^(k+3) ∣ a₃`, `ϖ^(k+3) ∣ a₄`, `ϖ^(2k+5) ∣ a₆` and
-`ϖ^(2k+7) ∤ discrim a₂ a₄ a₆`. In both cases the reduction symbol is `Iₙ*`, and `ϖ^(n+6) ∣ Δ`. -/
+`ϖ^(2k+7) ∤ discrim a₂ a₄ a₆`. In both cases `ϖ^(n+6) ∣ Δ`. (In Tate's algorithm the stopping
+stage `n` gives the reduction symbol `Iₙ*`; that identification is not part of this statement.) -/
 theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (ResidueField R)]
     (hϖ : Irreducible ϖ) (W : WeierstrassCurve R) (hΔ : W.Δ ≠ 0) (h₁ : ϖ ∣ W.a₁)
     (h₂ : ϖ ∣ W.a₂) (h₂' : ¬ ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄)
@@ -346,7 +348,7 @@ theorem exists_variableChange_not_pow_dvd_b₆_or_discrim [PerfectField (Residue
   obtain ⟨k, r, t, hM, hW⟩ : ∃ (k : ℕ) (r t : R), ¬ ϖ ^ (2 * k + (N + 1)) ∣ W.Δ ∧
       IsOddStage ϖ k (VariableChange.mk 1 r 0 t • W) := by
     refine ⟨0, 0, 0, by simpa using hN, ?_⟩
-    rw [show (VariableChange.mk 1 0 0 0 : VariableChange R) = 1 from rfl, one_smul]
+    rw [← VariableChange.one_def, one_smul]
     exact ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩
   clear hN
   generalize N + 1 = M at hM
