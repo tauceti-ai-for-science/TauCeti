@@ -20,7 +20,8 @@ the subgroup.
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
 
-If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`.
+If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`; in particular
+`N ≤ Γ` as soon as the index of `Γ` is prime to the order of `N`.
 Adjoining a two-element subgroup `N ⊄ Γ` normalised by `Γ` is also quantified: `Γ` then has
 relative index exactly `2` in `Γ ⊔ N`, so `Γ.index = 2 * (Γ ⊔ N).index`. Taking `N` to be the
 centre gives the `Γ.withCenter` readings.
@@ -35,6 +36,8 @@ centre gives the `Γ.withCenter` readings.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
+* `Subgroup.le_of_coprime_natCard_index`: a subgroup normalising `N`, of index prime to the order
+  of `N`, contains `N`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
@@ -308,6 +311,17 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
       Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
     simpa [mul_assoc] using hh
+
+/-- **A subgroup of index prime to `|N|` contains `N`**, when it normalises `N`: the relative
+index `[H ⊔ N : H] = [N : H ⊓ N]` divides both `|N|` and `[G : H]`, so it is `1`.
+
+A globally normal `N` is the special case `Subgroup.le_normalizer_of_normal`. -/
+theorem le_of_coprime_natCard_index {H N : Subgroup G} (hH : H ≤ normalizer N)
+    (hcop : (Nat.card N).Coprime H.index) : N ≤ H := by
+  rw [← relIndex_eq_one]
+  refine Nat.eq_one_of_dvd_coprimes hcop (relIndex_dvd_card H N) ?_
+  rw [← relIndex_sup_of_le_normalizer hH]
+  exact relIndex_dvd_index_of_le le_sup_left
 
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two

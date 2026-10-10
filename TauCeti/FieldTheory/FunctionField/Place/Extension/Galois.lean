@@ -49,7 +49,9 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 ## Main results
 
 * `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
-  `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
+  `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`, and
+  `TauCeti.Place.restrictScalars_mem_decompositionSubgroup_iff` says the same of decomposition
+  groups.
 * `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism fixing
   a rational place has the same residue on every regular function at that place.
 * `TauCeti.Place.degree_smul`: the action preserves the degree of a place over the constants.
@@ -180,6 +182,15 @@ theorem stabilizer_eq_decompositionSubgroup :
   ext σ
   rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← integers_smul]
   exact ⟨fun h ↦ by rw [h], fun h ↦ integers_injective h⟩
+
+/-- An automorphism of `F'` over an intermediate field `E` lies in the decomposition group of `P`
+over `E` exactly when, read over `F`, it lies in the decomposition group of `P` over `F`. -/
+theorem restrictScalars_mem_decompositionSubgroup_iff (E : IntermediateField F F')
+    (τ : F' ≃ₐ[E] F') :
+    τ.restrictScalars F ∈ P.integers.decompositionSubgroup F ↔
+      τ ∈ P.integers.decompositionSubgroup E := by
+  rw [← stabilizer_eq_decompositionSubgroup, ← stabilizer_eq_decompositionSubgroup,
+    MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, restrictScalars_smul]
 
 section Transport
 
