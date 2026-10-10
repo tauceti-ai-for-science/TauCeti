@@ -27,13 +27,6 @@ sequence `0 → E₁(F) → E₀(F) → W_k,ns(k) → 0` (AEC VII.2.1), for an a
 arbitrary integral model. The hypotheses are those of the statement: neither ellipticity of `W`,
 minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
 
-The proof uses the two Bosma–Lenstra addition laws. Write two points `P` and `Q` of `E₀(F)` as
-classes of primitive integral vectors `X` and `Y`. Their residues are nonsingular points of `W_k`,
-where the two laws do not vanish simultaneously, so some coordinate of one of the laws at `(X, Y)`
-is a unit of `O`. That law is then a primitive integral vector `S` whose class is `P + Q` over `F`
-and whose reduction is the sum of the reductions of `X` and `Y` over `k`
-(`WeierstrassCurve.Projective.exists_isUnimodular_map_equiv_add`).
-
 ## Main definitions
 
 * `WeierstrassCurve.Affine.nonsingularReduction`: the subgroup `E₀(F)` of points whose
@@ -82,11 +75,15 @@ theorem reduction_add_of_nonsingularLift {P Q : W.Point}
     reduction v (P + Q) =
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toProjective.addMap
         (reduction v P) (reduction v Q) := by
+  -- Write `P` and `Q` as classes of primitive integral vectors `X` and `Y`. Their residues are
+  -- nonsingular points of the reduced curve, where the two Bosma–Lenstra laws do not vanish
+  -- simultaneously, so some coordinate of one of the laws at `(X, Y)` is a unit. That law is then
+  -- a primitive integral vector `S` whose class is `P + Q` over `F` and whose reduction is the sum
+  -- of the reductions of `X` and `Y` over the residue field.
   obtain ⟨X, hX, hX₁, hPX⟩ := exists_isUnimodular_toProjective_point_eq v P
   obtain ⟨Y, hY, hY₁, hQY⟩ := exists_isUnimodular_toProjective_point_eq v Q
   rw [reduction_eq_mk v hX₁ hPX, Projective.nonsingularLift_iff] at hP
   rw [reduction_eq_mk v hY₁ hQY, Projective.nonsingularLift_iff] at hQ
-  -- one primitive integral vector `S` represents both the sum and the sum of the reductions
   obtain ⟨S, -, hS₁, hS⟩ := Projective.exists_isUnimodular_map_equiv_add hX hY hP hQ
   -- `baseChange` is `map` along `algebraMap`
   have hW : (integralModel v.valuationSubring W).toProjective.map
