@@ -391,17 +391,28 @@ lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : �
 instance : Epi (P.singularHomologyπ R 0) := inferInstance
 
 /-- **The five lemma for relative singular homology.** A map of pairs `f : (X, A) ⟶ (X', A')`
-inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')` in every degree induces isomorphisms
-`Hₙ(X, A) ≅ Hₙ(X', A')` in every degree. -/
-lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P')
-    (hfst : ∀ n, IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n))
-    (hsnd : ∀ n, IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n)) (n : ℕ) :
+inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')`, and also `Hₘ(X) ≅ Hₘ(X')` and
+`Hₘ(A) ≅ Hₘ(A')` for `m + 1 = n`, induces an isomorphism `Hₙ(X, A) ≅ Hₙ(X', A')`. -/
+lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
+    (hfst : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n))
+    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n))
+    (hfst' : ∀ m, m + 1 = n → IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R m))
+    (hsnd' : ∀ m, m + 1 = n → IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
     IsIso (TopPair.singularHomologyMap f R n) := by
-  have : QuasiIso (SSet.chainComplexMap (toSSetPair.map f).left R) :=
-    (quasiIso_iff _).2 fun i ↦ (quasiIsoAt_iff_isIso_homologyMap _ i).2 (hsnd i)
-  have : QuasiIso (SSet.chainComplexMap (toSSetPair.map f).right R) :=
-    (quasiIso_iff _).2 fun i ↦ (quasiIsoAt_iff_isIso_homologyMap _ i).2 (hfst i)
-  exact SSetPair.isIso_homologyMap_of_quasiIso (toSSetPair.map f) R n
+  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
+    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R)
+    ((toSSetPair.obj P).shortExact_chainComplexShortComplex R)
+    ((toSSetPair.obj P').shortExact_chainComplexShortComplex R) n
+  simp only [SSetPair.chainComplexShortComplexMap_τ₁, SSetPair.chainComplexShortComplexMap_τ₂,
+    SSetPair.chainComplexShortComplexMap_τ₃, ComplexShape.down_Rel] at this
+  -- The homology maps of these chain maps are `SSet.homologyMap` and
+  -- `TopPair.singularHomologyMap` by definition.
+  have h₁ : IsIso (HomologicalComplex.homologyMap
+      (SSet.chainComplexMap (toSSetPair.map f).left R) n) := hsnd
+  exact this inferInstance hfst hsnd' fun m hm ↦
+    have : IsIso (HomologicalComplex.homologyMap
+        (SSet.chainComplexMap (toSSetPair.map f).right R) m) := hfst' m hm
+    inferInstance
 
 end LongExactSequence
 
