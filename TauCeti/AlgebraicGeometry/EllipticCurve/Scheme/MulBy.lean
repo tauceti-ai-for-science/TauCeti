@@ -237,7 +237,8 @@ private theorem SpecMap_comp_fromSpecStalk_genericPoint {n : ℤ} (hn : n ≠ 0)
 /-- Over a field, multiplication by a nonzero integer on the projective Weierstrass model is
 dominant. -/
 instance isDominant_projModelMulBy (n : ℤ) [NeZero n] : IsDominant (W.projModelMulBy n) :=
-  isDominant_of_SpecMap_fromSpecStalk _ _ (W.SpecMap_comp_fromSpecStalk_genericPoint (NeZero.ne n))
+  (W.projModelMulBy n).isDominant_of_SpecMap_fromSpecStalk _
+    (W.SpecMap_comp_fromSpecStalk_genericPoint (NeZero.ne n))
 
 /-- **Multiplication by a nonzero integer fixes the generic point.** Over a field, for `n ≠ 0`,
 the morphism `[n]` of the projective Weierstrass model sends the generic point to itself. -/

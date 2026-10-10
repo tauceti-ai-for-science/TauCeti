@@ -34,8 +34,8 @@ the generic point.
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
   schemes sending the generic point to the generic point is dominant.
-* `AlgebraicGeometry.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible schemes
-  whose action on the generic point is given by a local homomorphism of function fields is
+* `AlgebraicGeometry.Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible
+  schemes whose action on the generic point is given by a local homomorphism of function fields is
   dominant.
 * `AlgebraicGeometry.Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk`: `Spec f^*` followed by
   `Spec K(Y) ⟶ Y` is `Spec K(X) ⟶ X` followed by `f`.
@@ -81,6 +81,8 @@ theorem isDominant_iff_genericPoint_eq {f : X ⟶ Y} :
   rw [← (genericPoint_spec Y).def]
   exact closure_mono (Set.singleton_subset_iff.mpr ⟨_, h⟩)
 
+namespace Scheme.Hom
+
 /-- A morphism `f : X ⟶ Y` of irreducible schemes is dominant when the canonical morphism
 `Spec K(X) ⟶ X` followed by `f` factors as `Spec φ` followed by the canonical morphism
 `Spec K(Y) ⟶ Y`, for a local homomorphism `φ : K(Y) ⟶ K(X)`. The homomorphism `φ` is then the
@@ -100,8 +102,6 @@ theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField 
         congrArg (fun g ↦ g (IsLocalRing.closedPoint X.functionField)) h.symm
     _ = genericPoint Y := (Scheme.Hom.comp_apply _ _ _).trans
         ((congrArg _ Spec_closedPoint).trans Scheme.fromSpecStalk_closedPoint)
-
-namespace Scheme.Hom
 
 /-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
 instance nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y) [IsDominant f]
@@ -143,7 +143,7 @@ theorem eq_functionFieldMap_iff (f : X ⟶ Y) [IsDominant f]
 /-- The pullback of rational functions `f^*` along a dominant morphism `f : X ⟶ Y` of irreducible
 schemes sends the germ at the generic point of a section `s` of `𝒪_Y` over a nonempty open `U` to
 the germ of its pullback `f^* s` over `f⁻¹ U`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y.Opens)
     [Nonempty U] :
     Y.germToFunctionField U ≫ f.functionFieldMap = f.app U ≫ X.germToFunctionField (f ⁻¹ᵁ U) := by
