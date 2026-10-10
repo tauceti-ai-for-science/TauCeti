@@ -85,20 +85,6 @@ noncomputable def infinityChartRestriction (x : F) :
       holomorphyRing ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers}) :=
   Subalgebra.inclusion (holomorphyRing_antitone Set.inter_subset_right)
 
-/-- Restriction to the overlap does not change the function. -/
-@[simp]
-theorem coe_finiteChartRestriction_apply (x : F)
-    (a : holomorphyRing {P : Place k F | x ∈ P.integers}) :
-    (finiteChartRestriction x a : F) = a :=
-  Subalgebra.coe_inclusion _ a
-
-/-- Restriction to the overlap does not change the function. -/
-@[simp]
-theorem coe_infinityChartRestriction_apply (x : F)
-    (a : holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers}) :
-    (infinityChartRestriction x a : F) = a :=
-  Subalgebra.coe_inclusion _ a
-
 /-- `Spec` of an inclusion of holomorphy rings that inverts a single function `x` is an open
 immersion. -/
 private theorem isOpenImmersion_specMap_inclusion (hF : IsFunctionField k F)
