@@ -75,7 +75,6 @@ open scoped AdeleGaloisAction
 variable {K L} in
 /-- The Galois action on an infinite idele is the Galois action on the underlying infinite
 adele. -/
-@[simp]
 theorem coe_infiniteIdele_smul (σ : L ≃ₐ[K] L) (x : (InfiniteAdeleRing L)ˣ) :
     ((σ • x : (InfiniteAdeleRing L)ˣ) : InfiniteAdeleRing L) = infiniteAdeleGaloisAction K L σ x :=
   (rfl)
@@ -108,7 +107,6 @@ variable {K L}
 
 /-- The component at `v` of the image of an infinite idele under `infiniteIdelesPiIso` is its
 semi-local component above `v`. -/
-@[simp]
 theorem coe_infiniteIdelesPiIso_hom_apply (x : Additive (InfiniteAdeleRing L)ˣ)
     (v : InfinitePlace K) :
     ((Additive.toMul ((infiniteIdelesPiIso K L).hom.hom x v) : (v.Completion ⊗[K] L)ˣ) :
