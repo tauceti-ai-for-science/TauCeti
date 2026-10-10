@@ -46,6 +46,9 @@ and that for transcendental `x` its function field is `F` as a `k`-algebra.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.isOpenImmersion_specMap_inclusion_holomorphyRing`: `Spec` of the
+  restriction from the holomorphy ring of `S` to that of `S ∩ {P | x⁻¹ ∈ 𝒪_P}` is an open
+  immersion.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isPushout`: the two charts glue along their overlap.
 * `TauCeti.AlgebraicGeometry.twoChartModel.range_ιFinite_union_range_ιInfinity`: the two charts
   cover the scheme.
@@ -70,24 +73,10 @@ universe u
 
 variable {k F : Type u} [Field k] [Field F] [Algebra k F]
 
-namespace twoChartModel
-
-/-- The restriction of a function regular wherever `x` is to the places at which `x` is a unit. -/
-noncomputable def finiteChartRestriction (x : F) :
-    holomorphyRing {P : Place k F | x ∈ P.integers} →ₐ[k]
-      holomorphyRing ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers}) :=
-  Subalgebra.inclusion (holomorphyRing_antitone Set.inter_subset_left)
-
-/-- The restriction of a function regular wherever `x⁻¹` is to the places at which `x` is a
-unit. -/
-noncomputable def infinityChartRestriction (x : F) :
-    holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers} →ₐ[k]
-      holomorphyRing ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers}) :=
-  Subalgebra.inclusion (holomorphyRing_antitone Set.inter_subset_right)
-
-/-- `Spec` of an inclusion of holomorphy rings that inverts a single function `x` is an open
-immersion. -/
-private theorem isOpenImmersion_specMap_inclusion (hF : IsFunctionField k F)
+/-- **`Spec` of an inclusion of holomorphy rings that inverts a single function is an open
+immersion**: if `T = S ∩ {P | x⁻¹ ∈ 𝒪_P}` for a nonzero `x ∈ 𝒪_S`, then `Spec 𝒪_T → Spec 𝒪_S` is
+an open immersion, the scheme-level form of `TauCeti.isLocalization_away_holomorphyRing_inter`. -/
+theorem isOpenImmersion_specMap_inclusion_holomorphyRing (hF : IsFunctionField k F)
     {S T : Set (Place k F)} (h : holomorphyRing S ≤ holomorphyRing T) (x : holomorphyRing S)
     (hx : (x : F) ≠ 0) (hT : T = S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers}) :
     IsOpenImmersion (Spec.map (CommRingCat.ofHom (Subalgebra.inclusion h).toRingHom)) := by
@@ -97,13 +86,29 @@ private theorem isOpenImmersion_specMap_inclusion (hF : IsFunctionField k F)
   have := isLocalization_away_holomorphyRing_inter hF x hx hT
   exact IsOpenImmersion.of_isLocalization x
 
+namespace twoChartModel
+
+/-- The restriction of a function regular wherever `x` is to the places at which `x` is a unit. -/
+noncomputable abbrev finiteChartRestriction (x : F) :
+    holomorphyRing {P : Place k F | x ∈ P.integers} →ₐ[k]
+      holomorphyRing ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers}) :=
+  Subalgebra.inclusion (holomorphyRing_antitone Set.inter_subset_left)
+
+/-- The restriction of a function regular wherever `x⁻¹` is to the places at which `x` is a
+unit. -/
+noncomputable abbrev infinityChartRestriction (x : F) :
+    holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers} →ₐ[k]
+      holomorphyRing ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers}) :=
+  Subalgebra.inclusion (holomorphyRing_antitone Set.inter_subset_right)
+
 /-- `Spec 𝒪_{x, x⁻¹} → Spec 𝒪_x` is an open immersion: the restriction to the overlap is the
 localization away from `x`. -/
 theorem isOpenImmersion_specMap_finiteChartRestriction (hF : IsFunctionField k F) {x : F}
     (hx : x ≠ 0) :
     IsOpenImmersion
       (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom)) :=
-  isOpenImmersion_specMap_inclusion hF _ ⟨x, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ hx rfl
+  isOpenImmersion_specMap_inclusion_holomorphyRing hF _
+    ⟨x, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ hx rfl
 
 /-- `Spec 𝒪_{x, x⁻¹} → Spec 𝒪_{x⁻¹}` is an open immersion: the restriction to the overlap is the
 localization away from `x⁻¹`. -/
@@ -111,8 +116,9 @@ theorem isOpenImmersion_specMap_infinityChartRestriction (hF : IsFunctionField k
     (hx : x ≠ 0) :
     IsOpenImmersion
       (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom)) :=
-  isOpenImmersion_specMap_inclusion hF _ ⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩
-    (inv_ne_zero hx) (by rw [inv_inv, Set.inter_comm])
+  isOpenImmersion_specMap_inclusion_holomorphyRing hF _
+    ⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ (inv_ne_zero hx)
+    (by rw [inv_inv, Set.inter_comm])
 
 end twoChartModel
 
