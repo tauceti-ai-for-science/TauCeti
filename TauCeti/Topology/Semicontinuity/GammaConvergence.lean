@@ -9,6 +9,7 @@ public import Mathlib.Topology.Instances.EReal.Lemmas
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
 public import TauCeti.Order.Filter.AtTopBot
+public import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
 # Γ-convergence
@@ -21,11 +22,12 @@ A sequence of extended-real functionals `F n : X → EReal` on a topological spa
   `limsup F n (u n) ≤ f x`.
 
 This is the notion of convergence of functionals under which minimization passes to the limit:
-under equicoercivity (`TauCeti.Equicoercive`: every sublevel `{F n ≤ t}` lies in a compact set
-independent of `n`) the infima of `F n` converge to the minimum of `f`, which is attained, and
-cluster points of minimizers of `F n` minimize `f`. Γ-convergence is stable under continuous
-perturbations, which is how it is applied to penalized functionals such as `F n + d(·, x)² / (2τ)`
-in the stability theory of resolvents and minimizing movements.
+on every topological space, cluster points of minimizers of `F n` minimize `f`; on a
+first-countable space, under equicoercivity (`TauCeti.Equicoercive`: every sublevel `{F n ≤ t}`
+lies in a compact set independent of `n`) the infima of `F n` converge to the infimum of `f`, which
+is attained when the space is nonempty. Γ-convergence is stable under continuous perturbations,
+which is how it is applied to penalized functionals such as `F n + d(·, x)² / (2τ)` in the
+stability theory of resolvents and minimizing movements.
 
 The *lower and upper Γ-limits* are defined through neighbourhoods,
 
@@ -33,8 +35,9 @@ The *lower and upper Γ-limits* are defined through neighbourhoods,
 
 and likewise with `limsup`. They are lower semicontinuous for every topology. On a first-countable
 space they are attained by sequences, so the sequential definition above says exactly that both
-Γ-limits equal `f` (`TauCeti.tendstoGamma_iff_gammaLiminf_eq_and_gammaLimsup_eq`). In particular a
-Γ-limit is lower semicontinuous, and Γ-convergence passes to subsequences.
+Γ-limits equal `f` (`TauCeti.tendstoGamma_iff_gammaLiminf_eq_and_gammaLimsup_eq`). In particular,
+on a first-countable space a Γ-limit is lower semicontinuous. Γ-convergence passes to
+subsequences on every topological space.
 
 ## Main definitions
 
@@ -47,14 +50,17 @@ space they are attained by sequences, so the sequential definition above says ex
 
 * `TauCeti.tendstoGamma_iff_gammaLiminf_eq_and_gammaLimsup_eq`: on a first-countable space,
   sequential Γ-convergence is the equality of the two neighbourhood Γ-limits with `f`.
-* `TauCeti.TendstoGamma.lowerSemicontinuous`: a Γ-limit is lower semicontinuous.
-* `TauCeti.TendstoGamma.comp`: Γ-convergence passes to subsequences.
+* `TauCeti.TendstoGamma.lowerSemicontinuous`: on a first-countable space, a Γ-limit is lower
+  semicontinuous.
+* `TauCeti.TendstoGamma.comp`: Γ-convergence passes to subsequences, on every topological space.
 * `TauCeti.TendstoGamma.add_continuous`: Γ-convergence is stable under adding a continuous real
   function.
-* `TauCeti.TendstoGamma.isMinOn_of_tendsto`: cluster points of minimizers are minimizers.
+* `TauCeti.TendstoGamma.isMinOn_of_tendsto`: cluster points of minimizers are minimizers, on
+  every topological space.
 * `TauCeti.TendstoGamma.tendsto_iInf` and `TauCeti.TendstoGamma.exists_isMinOn`: the
-  **fundamental theorem of Γ-convergence**: for an equicoercive sequence, the infima converge to
-  the infimum of the Γ-limit, and the latter is attained.
+  **fundamental theorem of Γ-convergence**: for an equicoercive sequence on a first-countable
+  space, the infima converge to the infimum of the Γ-limit, and the latter is attained when the
+  space is nonempty.
 
 ## References
 
@@ -117,15 +123,6 @@ theorem Equicoercive.comp (hF : Equicoercive F) (φ : ℕ → ℕ) : Equicoerciv
   fun t ↦ (hF t).imp fun _ hK ↦ ⟨hK.1, fun k ↦ hK.2 (φ k)⟩
 
 /-! ### The neighbourhood Γ-limits -/
-
-/-- A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s` is lower semicontinuous. -/
-theorem lowerSemicontinuous_iSup_nhds {β : Type*} [CompleteLinearOrder β] (G : Set X → β) :
-    LowerSemicontinuous fun x ↦ ⨆ s ∈ 𝓝 x, G s := by
-  intro x c hc
-  obtain ⟨s, hcs⟩ := lt_iSup_iff.1 hc
-  obtain ⟨hs, hcs⟩ := lt_iSup_iff.1 hcs
-  filter_upwards [interior_mem_nhds.2 hs] with y hy
-  exact hcs.trans_le (le_iSup₂ (f := fun s (_ : s ∈ 𝓝 y) ↦ G s) s (mem_interior_iff_mem_nhds.1 hy))
 
 /-- The lower Γ-limit is lower semicontinuous. -/
 theorem lowerSemicontinuous_gammaLiminf (F : ℕ → X → EReal) :
@@ -263,21 +260,46 @@ theorem gammaLimsup_eq (h : TendstoGamma F f) : gammaLimsup F = f :=
 theorem lowerSemicontinuous (h : TendstoGamma F f) : LowerSemicontinuous f :=
   h.gammaLiminf_eq ▸ lowerSemicontinuous_gammaLiminf F
 
-/-- On a first-countable space Γ-convergence passes to subsequences, and more generally to
-reindexings tending to infinity. -/
-theorem comp (h : TendstoGamma F f) {φ : ℕ → ℕ} (hφ : Tendsto φ atTop atTop) :
-    TendstoGamma (fun k ↦ F (φ k)) f where
-  le_liminf := le_gammaLiminf_iff.1 fun x ↦
-    (le_gammaLiminf_iff.2 h.le_liminf x).trans (gammaLiminf_le_gammaLiminf_comp hφ)
-  exists_tendsto_limsup_le x := by
-    obtain ⟨u, hu, hle⟩ := h.exists_tendsto_limsup_le x
-    exact ⟨u ∘ φ, hu.comp hφ, (hφ.limsup_comp_le_limsup (u := fun n ↦ F n (u n))).trans hle⟩
-
 end TendstoGamma
 
 end FirstCountableTopology
 
 namespace TendstoGamma
+
+/-- Γ-convergence passes to subsequences, and more generally to reindexings tending to
+infinity. -/
+theorem comp (h : TendstoGamma F f) {φ : ℕ → ℕ} (hφ : Tendsto φ atTop atTop) :
+    TendstoGamma (fun k ↦ F (φ k)) f where
+  le_liminf x u hu := by
+    -- Along a strictly increasing reindexing `ψ`, padding the points with `x` gives a sequence
+    -- converging to `x`, to which the liminf inequality for `F` applies.
+    have key {ψ : ℕ → ℕ} (hψ : StrictMono ψ) {v : ℕ → X} (hv : Tendsto v atTop (𝓝 x)) :
+        f x ≤ liminf (fun j ↦ F (ψ j) (v j)) atTop := by
+      have hw : Tendsto (Function.extend ψ v fun _ ↦ x) atTop (𝓝 x) := tendsto_def.2 fun U hU ↦ by
+        obtain ⟨J, hJ⟩ := eventually_atTop.1 (hv.eventually_mem hU)
+        filter_upwards [eventually_ge_atTop (ψ J)] with n hn
+        by_cases hn' : ∃ j, ψ j = n
+        · obtain ⟨j, rfl⟩ := hn'
+          rw [mem_preimage, hψ.injective.extend_apply]
+          exact hJ j (hψ.le_iff_le.1 hn)
+        · rw [mem_preimage, Function.extend_apply' _ _ _ hn']
+          exact mem_of_mem_nhds hU
+      simpa only [Function.comp_def, hψ.injective.extend_apply] using
+        (h.le_liminf hw).trans (hψ.tendsto_atTop.liminf_le_liminf_comp
+          (u := fun n ↦ F n (Function.extend ψ v (fun _ ↦ x) n)))
+    -- Otherwise infinitely many values lie below some `c < f x`; along them, `φ` can be made
+    -- strictly increasing, which contradicts `key`.
+    by_contra! hlt
+    obtain ⟨c, hlc, hcf⟩ := exists_between hlt
+    obtain ⟨ψ₁, hψ₁, hψ₁c⟩ :=
+      extraction_of_frequently_atTop (frequently_lt_of_liminf_lt (by isBoundedDefault) hlc)
+    obtain ⟨ψ₂, hψ₂, hφψ⟩ := strictMono_subseq_of_tendsto_atTop (hφ.comp hψ₁.tendsto_atTop)
+    refine hcf.not_ge ((key hφψ (hu.comp (hψ₁.comp hψ₂).tendsto_atTop)).trans ?_)
+    exact (liminf_le_liminf (Eventually.of_forall fun j ↦ (hψ₁c (ψ₂ j)).le)).trans_eq
+      (liminf_const c)
+  exists_tendsto_limsup_le x := by
+    obtain ⟨u, hu, hle⟩ := h.exists_tendsto_limsup_le x
+    exact ⟨u ∘ φ, hu.comp hφ, (hφ.limsup_comp_le_limsup (u := fun n ↦ F n (u n))).trans hle⟩
 
 /-- Γ-convergence is stable under adding a continuous real function. -/
 theorem add_continuous (h : TendstoGamma F f) {g : X → ℝ} (hg : Continuous g) :
@@ -317,8 +339,6 @@ theorem limsup_iInf_le (h : TendstoGamma F f) :
     obtain ⟨u, -, hle⟩ := h.exists_tendsto_limsup_le x
     exact (limsup_le_limsup (Eventually.of_forall fun n ↦ iInf_le _ (u n))).trans hle
 
-variable [FirstCountableTopology X]
-
 /-- Cluster points of minimizers are minimizers: if `u n` minimizes `F n` and `u (φ k) → x₀`
 along a subsequence, then `x₀` minimizes the Γ-limit `f`. -/
 theorem isMinOn_of_tendsto (h : TendstoGamma F f) (hu : ∀ n, IsMinOn (F n) univ (u n))
@@ -330,6 +350,8 @@ theorem isMinOn_of_tendsto (h : TendstoGamma F f) (hu : ∀ n, IsMinOn (F n) uni
         liminf_le_liminf (Eventually.of_forall fun k ↦ hu (φ k) (mem_univ (v k)))
     _ ≤ limsup (fun k ↦ F (φ k) (v k)) atTop := liminf_le_limsup
     _ ≤ f y := hle
+
+variable [FirstCountableTopology X]
 
 /-- A sequence of points of bounded energy for an equicoercive Γ-converging sequence has a
 convergent subsequence, along which the liminf inequality bounds the Γ-limit at its limit. -/
@@ -367,7 +389,10 @@ theorem exists_isMinOn [Nonempty X] (h : TendstoGamma F f) (hc : Equicoercive F)
   set m := ⨅ x, f x
   rcases eq_or_ne m ⊤ with hm | hm
   · obtain ⟨x₀⟩ := ‹Nonempty X›
-    exact ⟨x₀, fun y _ ↦ by simp [show f y = ⊤ from eq_top_iff.2 (hm ▸ iInf_le f y)]⟩
+    refine ⟨x₀, fun y _ ↦ ?_⟩
+    -- Every value of `f` is at least its infimum `⊤`, so `f y = ⊤` and `f x₀ ≤ f y` trivially.
+    have hfy : f y = ⊤ := eq_top_iff.2 (hm ▸ iInf_le f y)
+    simp [hfy]
   -- Choose levels `c k ↓ m`, points `y k` with `F (φ k) (y k) < c k`, and a cluster point.
   obtain ⟨c, hcanti, hcm, hc_lim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 hm)
   have hev : ∀ k, ∀ᶠ n in atTop, ∃ y, F n y < c k := fun k ↦
