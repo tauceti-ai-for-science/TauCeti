@@ -25,8 +25,8 @@ Coefficients are an object `R` of an abelian category with coproducts, as everyw
 singular homology.
 
 With coefficients in a module `M`, the singular homology of a contractible space is free or
-finitely generated when `M` is, and for `M` free of finite rank it has the rank of `M` in degree
-zero and vanishes in positive degrees (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
+finitely generated when `M` is, and over a nontrivial ring it has the rank of `M` in degree zero
+and vanishes in positive degrees (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
 
 The results follow Hatcher, *Algebraic Topology*, Section 2.1: the vanishing of reduced homology
 for contractible spaces after Corollary 2.11 and Example 2.23 for the disk and its boundary sphere.
@@ -177,16 +177,23 @@ instance finite_singularHomology_of_contractibleSpace [Module.Finite k M] (q : �
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) :=
   finite_singularHomology_of_finite_reducedSingularHomology M q
 
-/-- **The homology of a contractible space** with coefficients in a free module of finite rank
+/-- **The homology of a contractible space** with coefficients in a module over a nontrivial ring
 has the rank of the coefficients in degree zero and vanishes in positive degrees. -/
 @[simp]
-theorem finrank_singularHomology_of_contractibleSpace [StrongRankCondition k] [Module.Free k M]
-    [Module.Finite k M] (q : ℕ) :
+theorem finrank_singularHomology_of_contractibleSpace [Nontrivial k] (q : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) =
       if q = 0 then Module.finrank k M else 0 := by
-  have := nontrivial_of_invariantBasisNumber k
-  rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
-    Module.finrank_zero_of_subsingleton, zero_add]
+  cases q with
+  | zero =>
+    rw [ite_eq_left rfl]
+    let e := singularHomology₀SplitIso M (Classical.arbitrary X) ≪≫
+      (isoZeroBiprod (isZero_reducedSingularHomologyFunctor_of_contractibleSpace M X 0)).symm
+    exact e.toLinearEquiv.finrank_eq
+  | succ q =>
+    rw [ite_eq_right q.succ_ne_zero]
+    have := ModuleCat.isZero_iff_subsingleton.mp
+      (isZero_singularHomologyFunctor_of_contractibleSpace M X q.succ_ne_zero)
+    exact Module.finrank_zero_of_subsingleton
 
 end Free
 
