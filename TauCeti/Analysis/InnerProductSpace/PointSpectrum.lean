@@ -34,11 +34,11 @@ eigenvalues are mutually orthogonal and span `E`. Hence the point-spectral subsp
 the span of the vectors of an ordered eigenbasis whose eigenvalues lie in `Ω`, and its orthogonal
 projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`.
 
-On a subspace invariant under a symmetric operator, point-spectral containment is equivalent to a
-quadratic-form bound: the restricted point spectrum lies in `(-∞, a]` exactly when
-`re ⟪A x, x⟫ ≤ a ‖x‖²` on the subspace, and in `[a, ∞)` exactly when `a ‖x‖² ≤ re ⟪A x, x⟫`
-there. The implication from the form bound to the spectral containment needs neither symmetry
-nor invariance.
+On a finite-dimensional subspace invariant under a symmetric operator, point-spectral containment
+is equivalent to a quadratic-form bound: the restricted point spectrum lies in `(-∞, a]` exactly
+when `re ⟪A x, x⟫ ≤ a ‖x‖²` on the subspace, and in `[a, ∞)` exactly when
+`a ‖x‖² ≤ re ⟪A x, x⟫` there. The implication from the form bound to the spectral containment
+needs neither symmetry, invariance, nor finite dimensionality.
 
 ## Main definitions
 
@@ -59,7 +59,8 @@ nor invariance.
 * `LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace`: its orthogonal projection is
   the functional calculus of the indicator function of `Ω`.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
-  on an invariant subspace, point-spectral containment in a half-line is a quadratic-form bound.
+  on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
+  quadratic-form bound.
 
 ## References
 
@@ -154,6 +155,18 @@ def pointSpectralSubspace (A : Module.End 𝕜 E) (Ω : Set ℝ) : Submodule �
   ⨆ μ ∈ Ω, A.eigenspace (μ : 𝕜)
 
 variable {Ω Ω' : Set ℝ}
+
+/-- The point-spectral subspace selected by `Ω` is the supremum of the eigenspaces of `A` at the
+eigenvalues in `Ω`. -/
+theorem pointSpectralSubspace_eq_iSup :
+    A.pointSpectralSubspace Ω = ⨆ μ ∈ Ω, A.eigenspace (μ : 𝕜) :=
+  (rfl)
+
+/-- The point-spectral subspace selected by `Ω` lies in `V` exactly when every eigenspace of `A`
+at an eigenvalue in `Ω` does. -/
+theorem pointSpectralSubspace_le_iff :
+    A.pointSpectralSubspace Ω ≤ V ↔ ∀ μ ∈ Ω, A.eigenspace (μ : 𝕜) ≤ V :=
+  iSup₂_le_iff
 
 /-- The eigenspace of `A` at an eigenvalue in `Ω` lies in the point-spectral subspace. -/
 theorem eigenspace_le_pointSpectralSubspace (hμ : μ ∈ Ω) :
