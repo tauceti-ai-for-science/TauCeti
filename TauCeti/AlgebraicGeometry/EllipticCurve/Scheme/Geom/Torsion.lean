@@ -204,8 +204,7 @@ include hg h0
 of `E'` to that of `E`. It is the restriction of `g` (`torsionMap_torsionι`). -/
 noncomputable def torsionMap : (E'.torsion n).X.left ⟶ (E.torsion n).X.left :=
   (E.isPullback_torsion n).lift ((E'.torsionι n).left ≫ g) ((E'.torsion n).X.hom ≫ f) (by
-    rw [Category.assoc, ← mulBy_left_comp_of_isPullback hg h0, ← Category.assoc,
-      (E'.isPullback_torsion n).w, Category.assoc, h0, Category.assoc])
+    simp [← mulBy_left_comp_of_isPullback hg h0, (E'.isPullback_torsion n).w_assoc, h0])
 
 /-- The morphism `E'[n] ⟶ E[n]` is the restriction of `g`. -/
 @[reassoc (attr := simp)]
@@ -230,9 +229,8 @@ theorem isPullback_torsionMap :
       s.snd ?_) ?_ ?_ ?_)
   · -- the point of `E'` given by `s` is killed by `[n]`, as its image in `E` is
     refine hg.hom_ext ?_ (by simp)
-    rw [Category.assoc, mulBy_left_comp_of_isPullback hg h0, IsPullback.lift_fst_assoc,
-      Category.assoc, (E.isPullback_torsion n).w, ← Category.assoc, s.condition, Category.assoc,
-      Category.assoc, h0]
+    simp [mulBy_left_comp_of_isPullback hg h0, (E.isPullback_torsion n).w, reassoc_of% s.condition,
+      h0]
   · intro s
     refine (E.isPullback_torsion n).hom_ext ?_ ?_
     · simp

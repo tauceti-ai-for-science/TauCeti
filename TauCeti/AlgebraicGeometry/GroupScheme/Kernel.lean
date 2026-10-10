@@ -185,9 +185,7 @@ schemes with values in `Z` form the kernel of the induced homomorphism from the 
 the points of `H` with values in `Z`. -/
 noncomputable def kernelPointsMulEquiv :
     (Z ⟶ (kernel f).X) ≃* (IsMonHom.monoidHom f.hom.hom Z).ker where
-  toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by
-    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, Category.assoc, kernel_ι_comp_hom,
-      comp_one]⟩
+  toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by simp [kernel_ι_comp_hom]⟩
   invFun x := kernelLift x.1 (MonoidHom.mem_ker.1 x.2 :)
   left_inv y := kernel_hom_ext (kernelLift_ι _ _)
   right_inv x := Subtype.ext (kernelLift_ι _ _)
