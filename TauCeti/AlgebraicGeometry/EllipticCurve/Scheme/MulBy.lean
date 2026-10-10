@@ -213,11 +213,18 @@ private theorem SpecMap_fromSpecStalk_genericPoint_projModelMulBy {n : ℤ} (hn 
   have hgen := (TauCeti.Isogeny.map_mulByIntIsogeny_genericPoint W.toAffine
     (TauCeti.Isogeny.psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero hn)).symm
   rw [Affine.genericPoint_eq_some, Affine.Point.map_some] at hgen
-  -- `hgen` uses the ring structure of `K(W)` found through `OreLocalization`, the lemma the one
-  -- coming from its field structure; applying the lemma checks that they are definitionally equal
-  refine (W.projModelPoint_projModelMulBy_of_zsmul_some _ hgen).trans
+  unfold Affine.baseChange WeierstrassCurve.baseChange at hgen
+  refine (W.projModelPoint_projModelMulBy_of_zsmul_some (algebraMap K W.toAffine.FunctionField)
+    (h := Affine.nonsingular_genericX_genericY W.toAffine)
+    (x' := (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback W.toAffine.genericX)
+    (y' := (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback W.toAffine.genericY)
+    (h' := ?h') ?hgen).trans
     (projModelPoint_eq_projModelPoint_iff.mpr ⟨(AlgHom.comp_algebraMap _).symm, 1,
       funext fun k ↦ by fin_cases k <;> simp⟩)
+  -- `hgen` uses the ring structure of `K(W)` from `OreLocalization`, the goal the one underlying
+  -- its field structure `FractionRing.field`, which is built from it: they agree at instance
+  -- transparency
+  case hgen => with_reducible_and_instances exact hgen
 
 -- `[n]` acts on the generic point `Spec K(E) ⟶ E` of the projective model through the
 -- equation-level pullback of rational functions along `[n]`, conjugated by
