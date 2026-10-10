@@ -390,6 +390,19 @@ lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : �
 /-- The map from ambient zeroth homology to relative zeroth homology is an epimorphism. -/
 instance : Epi (P.singularHomologyπ R 0) := inferInstance
 
+/-- **The five lemma for relative singular homology.** A map of pairs `f : (X, A) ⟶ (X', A')`
+inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')` in every degree induces isomorphisms
+`Hₙ(X, A) ≅ Hₙ(X', A')` in every degree. -/
+lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P')
+    (hfst : ∀ n, IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n))
+    (hsnd : ∀ n, IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n)) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap f R n) := by
+  have : QuasiIso (SSet.chainComplexMap (toSSetPair.map f).left R) :=
+    (quasiIso_iff _).2 fun i ↦ (quasiIsoAt_iff_isIso_homologyMap _ i).2 (hsnd i)
+  have : QuasiIso (SSet.chainComplexMap (toSSetPair.map f).right R) :=
+    (quasiIso_iff _).2 fun i ↦ (quasiIsoAt_iff_isIso_homologyMap _ i).2 (hfst i)
+  exact SSetPair.isIso_homologyMap_of_quasiIso (toSSetPair.map f) R n
+
 end LongExactSequence
 
 end TopPair
