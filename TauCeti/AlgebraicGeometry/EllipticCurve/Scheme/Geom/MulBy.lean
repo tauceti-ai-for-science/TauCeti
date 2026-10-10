@@ -42,6 +42,8 @@ morphism of bases carries `[n]` to `[n]`.
   `[-n] = [n]⁻¹` and `[m * n] = [n] ≫ [m]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_comp`: every homomorphism of elliptic curves
   over `S` commutes with multiplication by `n`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_mulBy_left`: multiplication by `n` is
+  proper.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_zero_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_neg_one_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_add_left`: `[0]`, `[-1]` and `[m + n]` on
@@ -141,6 +143,13 @@ theorem mulBy_comp {E' : EllipticCurveGeom S} (n : ℤ)
 theorem mulBy_left_structureMap (n : ℤ) :
     (E.mulBy n).left ≫ E.structureMap = E.structureMap :=
   (E.mulBy n).w
+
+/-- **Multiplication by `n` is proper**, as a morphism over `S` between schemes proper over `S`. -/
+instance isProper_mulBy_left (n : ℤ) : IsProper (E.mulBy n).left := by
+  have : IsProper ((E.mulBy n).left ≫ E.structureMap) := by
+    rw [mulBy_left_structureMap]
+    infer_instance
+  exact .of_comp _ E.structureMap
 
 /-- Multiplication by `n` fixes the zero section. -/
 @[reassoc (attr := simp)]

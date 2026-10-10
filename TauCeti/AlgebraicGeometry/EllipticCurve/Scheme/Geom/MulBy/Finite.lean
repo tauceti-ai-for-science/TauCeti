@@ -29,8 +29,6 @@ with finitely many closed points is finite.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_mulBy_left`: multiplication by `n` is
-  proper.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyQuasiFinite_mulBy_left`: multiplication by a
   nonzero integer is locally quasi-finite.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_mulBy_left`: multiplication by a nonzero
@@ -96,13 +94,6 @@ private theorem finite_preimage_range_mulBy_left {K : Type u} [Field K] [IsAlgCl
       (this.trans (pointOfClosedPoint_apply ..)))
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
-
-/-- **Multiplication by `n` is proper**, as a morphism over `S` between schemes proper over `S`. -/
-instance isProper_mulBy_left (n : ℤ) : IsProper (E.mulBy n).left := by
-  have : IsProper ((E.mulBy n).left ≫ E.structureMap) := by
-    rw [mulBy_left_structureMap]
-    infer_instance
-  exact .of_comp _ E.structureMap
 
 /-- **Multiplication by a nonzero integer is locally quasi-finite**: every fibre of
 `[n] : E ⟶ E` is finite. -/
