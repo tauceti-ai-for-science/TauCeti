@@ -28,7 +28,8 @@ This file supplies that missing input:
 It also records how the boundary of a cube with one extra direction splits, mirroring Mathlib's
 `Cube.boundary_sum_iff`: a point of `I^(Option N)` is on the boundary exactly when its `none`
 coordinate is `0` or `1` or its remaining coordinates are on the boundary of `I^N`
-(`Cube.boundary_option_iff`). This is how a cube `I × I^N` with a distinguished first direction,
+(`Cube.boundary_option_iff`), and likewise for the first coordinate of `I^(Fin (n + 1))`
+(`Cube.boundary_fin_succ_iff`). This is how a cube `I × I^N` with a distinguished first direction,
 as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)` along
 `TauCeti.piOptionEquivProdHomeomorph` (`TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`).
 
@@ -48,7 +49,8 @@ at `0` while releasing the first.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
-* `Cube.boundary_option_iff`: the boundary of `I^(Option N)`.
+* `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
+  and `I^(Fin (n + 1))`.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
@@ -67,6 +69,20 @@ theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
     exacts [Or.inl hk, Or.inr ⟨k, hk⟩]
   · rintro (h | ⟨k, hk⟩)
     exacts [⟨none, h⟩, ⟨some k, hk⟩]
+
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate
+is `0` or `1`, or its remaining coordinates `Fin.tail y` lie on the boundary of `I^(Fin n)`. -/
+theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
+    y ∈ Cube.boundary (Fin (n + 1)) ↔
+      (y 0 = 0 ∨ y 0 = 1) ∨ Fin.tail y ∈ Cube.boundary (Fin n) := by
+  constructor
+  · rintro ⟨j, hj⟩
+    cases j using Fin.cases with
+    | zero => exact Or.inl hj
+    | succ k => exact Or.inr ⟨k, hj⟩
+  · rintro (h | ⟨k, hk⟩)
+    exacts [⟨0, h⟩, ⟨k.succ, hk⟩]
 
 namespace TauCeti
 
