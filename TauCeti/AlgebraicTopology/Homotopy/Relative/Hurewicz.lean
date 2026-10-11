@@ -244,11 +244,22 @@ theorem hurewicz_ofHomotopyGroup
       HomotopyGroup.hurewicz R n ((HomotopyGroup.congrEquiv (finSuccEquiv n)).symm a) ≫
         X.pair.singularHomologyπ R (n + 1) := by
   induction a using Quotient.inductionOn with | h γ => ?_
-  rw [HomotopyGroup.congrEquiv_symm_mk, ofHomotopyGroup_mk, hurewicz_mk, RelGenLoop.hurewicz_def,
-    toCubeBoundaryPairHom_ofGenLoop, HomotopyGroup.hurewicz_mk,
-    ← singularHomologyπ_comp_basepointPairHom, ← singularHomologyIsoOfSubsetSingleton_hom,
-    TopPair.singularHomologyMap_comp]
-  exact (GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_assoc R _ _).symm
+  rw [HomotopyGroup.congrEquiv_symm_mk, ofHomotopyGroup_mk, hurewicz_mk, HomotopyGroup.hurewicz_mk]
+  set γ' := GenLoop.congr _ (finSuccEquiv n).symm γ
+  calc RelGenLoop.hurewicz R (RelGenLoop.ofGenLoop γ)
+      = ((singularHomologyCubeBoundaryPairIso R (n + 1)).inv ≫
+          TopPair.singularHomologyMap (GenLoop.toCubeBoundaryPairHom γ') R (n + 1)) ≫
+          TopPair.singularHomologyMap (basepointPairHom X) R (n + 1) := by
+        -- The relative cube factors through `basepointPairHom X`.
+        rw [RelGenLoop.hurewicz_def, toCubeBoundaryPairHom_ofGenLoop,
+          TopPair.singularHomologyMap_comp, Category.assoc]
+    _ = (GenLoop.hurewicz R γ' ≫ (singularHomologyIsoOfSubsetSingleton R n _).hom) ≫
+          TopPair.singularHomologyMap (basepointPairHom X) R (n + 1) := by
+        rw [GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom]
+    _ = GenLoop.hurewicz R γ' ≫ X.pair.singularHomologyπ R (n + 1) := by
+        -- The quotient map to `(X, A)` factors through `(X, {a₀})`.
+        rw [← singularHomologyπ_comp_basepointPairHom, ← singularHomologyIsoOfSubsetSingleton_hom]
+        exact Category.assoc _ _ _
 
 end RelHomotopyGroup
 
