@@ -50,7 +50,7 @@ laws apply to rectangular maps.
 
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge Studies in Advanced Mathematics 13,
   Cambridge University Press (1987), §§2.2–2.3.
-* I. C. Gohberg, M. G. Kreĭn, *Introduction to the Theory of Linear Nonselfadjoint Operators*,
+* I. C. Gohberg, M. G. Krein, *Introduction to the Theory of Linear Nonselfadjoint Operators*,
   Translations of Mathematical Monographs 18, AMS (1969), Chapter II.
 -/
 
