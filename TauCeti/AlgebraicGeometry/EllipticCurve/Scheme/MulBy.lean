@@ -44,9 +44,7 @@ identifies the extension of function fields induced by the scheme `[n]` with the
 * `WeierstrassCurve.projModelMulBy_eq`: it is multiplication by `n` on `toEllipticCurveGeom W`.
 * `WeierstrassCurve.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy`: `[n]` sends the
   point with values in a field `L` of a point `P` of `W` over `L` to that of `n • P`.
-* `WeierstrassCurve.projModelMulBy_genericPoint`: over a field, for `n ≠ 0`, `[n]` sends the
-  generic point of the projective model to itself; so `[n]` is dominant
-  (`WeierstrassCurve.isDominant_projModelMulBy`).
+* `WeierstrassCurve.isDominant_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` is dominant.
 * `WeierstrassCurve.projModelFunctionFieldEquiv_mulByFunctionFieldPullback`: over a field, for
   `n ≠ 0`, the pullback of rational functions along `[n]` is the equation-level pullback
   `(TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback`.
@@ -239,13 +237,6 @@ dominant. -/
 instance isDominant_projModelMulBy (n : ℤ) [NeZero n] : IsDominant (W.projModelMulBy n) :=
   (W.projModelMulBy n).isDominant_of_SpecMap_fromSpecStalk _
     (W.SpecMap_comp_fromSpecStalk_genericPoint (NeZero.ne n))
-
-/-- **Multiplication by a nonzero integer fixes the generic point.** Over a field, for `n ≠ 0`,
-the morphism `[n]` of the projective Weierstrass model sends the generic point to itself. -/
-theorem projModelMulBy_genericPoint {n : ℤ} (hn : n ≠ 0) :
-    W.projModelMulBy n (genericPoint W.projModel) = genericPoint W.projModel :=
-  have : NeZero n := ⟨hn⟩
-  (W.projModelMulBy n).genericPoint_eq_of_isDominant
 
 /-- **The pullback of rational functions along multiplication by `n`.** Over a field, for
 `n ≠ 0`, the pullback `[n]^* : K(E) →+* K(E)` of rational functions along the dominant morphism
