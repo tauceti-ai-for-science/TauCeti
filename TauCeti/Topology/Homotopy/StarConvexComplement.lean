@@ -100,11 +100,6 @@ open TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
 
 omit [NormedSpace ℝ E] in
-/-- The point `p` lies in the open ball `ball p r ⊇ K`, so `p ∈ K` forces `r > 0`. -/
-private theorem pos_of_mem (hp : p ∈ K) (hKr : K ⊆ ball p r) : 0 < r := by
-  simpa using hKr hp
-
-omit [NormedSpace ℝ E] in
 /-- The points of `Kᶜ` differ from `p` when `p ∈ K`. -/
 private theorem sub_ne_zero_of_mem_compl (hp : p ∈ K) {z : E} (hz : z ∈ Kᶜ) : z - p ≠ 0 :=
   sub_ne_zero.mpr fun h ↦ hz (h ▸ hp)
@@ -160,7 +155,7 @@ def complSphereHomotopyEquiv (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr : K �
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (sphere p r))
     ext x
     have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
-    simp [hx, div_self (pos_of_mem hp hKr).ne']
+    simp [hx, div_self (pos_of_mem_ball (hKr hp)).ne']
   right_inv := ⟨hK.complRadialHomotopy hp hKr⟩
 
 /-- The homotopy equivalence `StarConvex.complSphereHomotopyEquiv` is the inclusion of the
