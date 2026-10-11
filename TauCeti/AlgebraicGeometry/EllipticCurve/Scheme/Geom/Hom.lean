@@ -77,7 +77,6 @@ theorem hom_ext_left {f g : E.toCommGrp ⟶ E'.toCommGrp}
 
 /-- The sum of two homomorphisms of elliptic curves over `S` is, on underlying schemes, their sum
 under the addition morphism of the target. -/
-@[simp]
 theorem add_hom_hom_hom_left (f g : E.toCommGrp ⟶ E'.toCommGrp) :
     (f + g).hom.hom.hom.left = pullback.lift f.hom.hom.hom.left g.hom.hom.hom.left
       ((Over.w f.hom.hom.hom).trans (Over.w g.hom.hom.hom).symm) ≫ E'.addition := by
@@ -85,14 +84,12 @@ theorem add_hom_hom_hom_left (f g : E.toCommGrp ⟶ E'.toCommGrp) :
 
 /-- The zero homomorphism of elliptic curves over `S` is, on underlying schemes, the structure
 morphism of the source followed by the zero section of the target. -/
-@[simp]
 theorem zero_hom_hom_hom_left :
     (0 : E.toCommGrp ⟶ E'.toCommGrp).hom.hom.hom.left = E.structureMap ≫ E'.zero := by
   simp
 
 /-- The negative of a homomorphism of elliptic curves over `S` is, on underlying schemes, the
 homomorphism followed by the negation morphism of the target. -/
-@[simp]
 theorem neg_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
     (-f).hom.hom.hom.left = f.hom.hom.hom.left ≫ E'.neg := by
   rw [CommGrp.neg_hom_hom_hom, hom_inv_left]

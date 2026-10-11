@@ -60,7 +60,7 @@ variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] [BraidedCat
 group law of `B`, written additively. It is transported along `InducedCategory.homEquiv` from the
 commutative group of morphisms of group objects into the commutative group object `B` (Mathlib's
 `Hom.commGroup` in `Grp C`). -/
-noncomputable instance (A B : CommGrp C) : AddCommGroup (A ⟶ B) :=
+noncomputable instance instAddCommGroupHom (A B : CommGrp C) : AddCommGroup (A ⟶ B) :=
   (InducedCategory.homEquiv.trans Additive.ofMul).addCommGroup
 
 variable {A B : CommGrp C}
