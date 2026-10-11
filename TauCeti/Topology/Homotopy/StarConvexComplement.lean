@@ -142,6 +142,18 @@ theorem coe_complRadialHomotopy_apply (hK : StarConvex ℝ p K) (hp : p ∈ K)
       p + ((1 - (t : ℝ)) * (r / ‖(z : E) - p‖) + t) • ((z : E) - p) :=
   (rfl)
 
+/-- The radial deformation of `Kᶜ` fixes every included point of the sphere throughout the
+homotopy. -/
+@[simp]
+theorem complRadialHomotopy_apply_inclusion (hK : StarConvex ℝ p K) (hp : p ∈ K)
+    (hKr : K ⊆ ball p r) (t : I) (x : sphere p r) :
+    hK.complRadialHomotopy hp hKr
+        (t, Set.inclusion (sphere_disjoint_ball.mono_right hKr).subset_compl_right x) =
+      Set.inclusion (sphere_disjoint_ball.mono_right hKr).subset_compl_right x := by
+  ext
+  have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
+  simp [hx, div_self (pos_of_mem_ball (hKr hp)).ne']
+
 /-- **The complement of a bounded star-convex set is homotopy equivalent to a sphere.** If `K`
 contains `p`, is star-convex about `p` and lies in `ball p r`, then the inclusion
 `sphere p r → Kᶜ` is a homotopy equivalence; its homotopy inverse is the radial projection
