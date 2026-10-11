@@ -10,10 +10,14 @@ public import Mathlib.Data.Set.Card
 /-!
 # Cardinalities of preimages under division
 
-Every natural number `j` is the quotient `i / n` of exactly the `n` natural numbers
-`n * j, …, n * j + n - 1`. Hence the preimage of a set `S ⊆ ℕ` under `i ↦ i / n` has `n` times as
-many elements as `S`. This is the counting fact behind sequences that repeat each term `n` times,
-such as the singular values of a block sum of `n` copies of one map.
+For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n` natural numbers
+`n * j, …, n * j + n - 1`. Hence for `n > 0` the preimage of a finite set `S ⊆ ℕ` under
+`i ↦ i / n` has `n` times as many elements as `S`. This is the counting fact behind sequences that
+repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
+
+The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
+and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
+sides are `0` when `S` is infinite or `n = 0`.
 -/
 
 public section

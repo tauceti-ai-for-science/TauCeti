@@ -197,9 +197,13 @@ theorem kyFanSum_prodMap_withLpMap_self (A : E₁ →ₗ[𝕜] F₁) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [show 2 * (k + 1) = 2 * k + 1 + 1 by ring, kyFanSum_succ, kyFanSum_succ, ih,
-      singularValues_prodMap_withLpMap_self, singularValues_prodMap_withLpMap_self,
-      show (2 * k + 1) / 2 = k by omega, show 2 * k / 2 = k by omega, kyFanSum_succ]
+    -- Splitting `2 * (k + 1)` as `2 * k + 1 + 1` exposes two steps of the Ky Fan recurrence, which
+    -- add `σ_{2k}(A ⊕ A)` and `σ_{2k+1}(A ⊕ A)`; both indices halve to `k`, so each is `σₖ(A)`.
+    have hidx : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
+    have hodd : (2 * k + 1) / 2 = k := by omega
+    have heven : 2 * k / 2 = k := by omega
+    rw [hidx, kyFanSum_succ, kyFanSum_succ, ih, singularValues_prodMap_withLpMap_self,
+      singularValues_prodMap_withLpMap_self, hodd, heven, kyFanSum_succ]
     ring
 
 end FiniteDimensional
