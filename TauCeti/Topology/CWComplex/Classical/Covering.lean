@@ -5,22 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Analysis.Normed.Module.Convex
-public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.CWComplex.Classical.Finite
-public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.Covering.Convex
 public import TauCeti.Topology.SeparatedMap
 
 /-!
 # Lifting a finite CW structure along a covering map
 
 Let `p : E → B` be a covering map with finite fibres and let `C` be a finite CW complex in `B`.
-The closed unit ball is contractible and locally path-connected, so the characteristic map of
-each cell of `C` lifts through `p`, uniquely once the lift of one point is prescribed. Lifting
-every characteristic map through every point over the centre of its cell makes `p ⁻¹' C` a finite
-CW complex (`TauCeti.cwComplexPreimage`):
+The closed unit ball is convex, so the characteristic map of each cell of `C` lifts through `p`,
+uniquely once the lift of one point is prescribed
+(`IsCoveringMap.existsUnique_continuousMap_lifts_of_convex`). Lifting every characteristic map
+through every point over the centre of its cell makes `p ⁻¹' C` a finite CW complex
+(`TauCeti.cwComplexPreimage`):
 
 * its `n`-cells are the pairs of an `n`-cell `i` of `C` and a point of `E` over the centre
   `map n i 0` (`TauCeti.cellPreimageEquiv`);
@@ -78,26 +77,20 @@ section Lift
 variable (hp : IsCoveringMap p)
 include hp
 
-/-- A continuous map out of a closed unit ball lifts uniquely through a covering map once the lift
-of one point is prescribed: the ball is contractible and locally path-connected. -/
-private theorem existsUnique_lift {n : ℕ} (f : C(closedBall (0 : Fin n → ℝ) 1, B))
-    (x : closedBall (0 : Fin n → ℝ) 1) (e : E) (he : p e = f x) :
-    ∃! F : C(closedBall (0 : Fin n → ℝ) 1, E), F x = e ∧ p ∘ F = f :=
-  have := contractibleSpace_closedBall (x := (0 : Fin n → ℝ)) zero_le_one
-  have := (convex_closedBall (0 : Fin n → ℝ) 1).locallyPathConnectedSpace
-  hp.existsUnique_continuousMap_lifts f x e he
-
 /-- The lift of the characteristic map of `c.1` through `p` sending the centre to `c.2`. -/
 private def coverLift {n : ℕ} (c : CoverCell p C n) : C(closedBall (0 : Fin n → ℝ) 1, E) :=
-  (existsUnique_lift hp (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose
+  (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose
 
 private theorem coverLift_ballCentre {n : ℕ} (c : CoverCell p C n) :
     coverLift hp c (ballCentre n) = c.2 :=
-  (existsUnique_lift hp (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.1
+  (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.1
 
 private theorem comp_coverLift {n : ℕ} (c : CoverCell p C n) :
     p ∘ coverLift hp c = cellBallMap c.1 :=
-  (existsUnique_lift hp (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.2
+  (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.2
 
 private theorem coverLift_apply {n : ℕ} (c : CoverCell p C n) (x : closedBall (0 : Fin n → ℝ) 1) :
     p (coverLift hp c x) = map n c.1 x :=
@@ -108,10 +101,12 @@ private theorem coverLift_apply {n : ℕ} (c : CoverCell p C n) (x : closedBall 
 private theorem exists_coverLift_eq {n : ℕ} (i : cell C n) (x : closedBall (0 : Fin n → ℝ) 1)
     {e : E} (he : p e = map n i x) :
     ∃ e₀ : p ⁻¹' {map n i 0}, coverLift hp ⟨i, e₀⟩ x = e := by
-  obtain ⟨F, ⟨hFx, hF⟩, -⟩ := existsUnique_lift hp (cellBallMap i) x e he
+  obtain ⟨F, ⟨hFx, hF⟩, -⟩ :=
+    hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1) (cellBallMap i) x e he
   have hF₀ : F (ballCentre n) ∈ p ⁻¹' {map n i 0} := congr_fun hF (ballCentre n)
   refine ⟨⟨_, hF₀⟩, ?_⟩
-  obtain ⟨G, -, hG⟩ := existsUnique_lift hp (cellBallMap i) (ballCentre n) _ hF₀
+  obtain ⟨G, -, hG⟩ := hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
+      (cellBallMap i) (ballCentre n) _ hF₀
   rw [hG (coverLift hp ⟨i, ⟨_, hF₀⟩⟩) ⟨coverLift_ballCentre hp _, comp_coverLift hp _⟩,
     ← hG F ⟨rfl, hF⟩, hFx]
 
@@ -119,7 +114,8 @@ private theorem exists_coverLift_eq {n : ℕ} (i : cell C n) (x : closedBall (0 
 private theorem eq_of_coverLift_eq {n : ℕ} {i : cell C n} {e₀ e₁ : p ⁻¹' {map n i 0}}
     (x : closedBall (0 : Fin n → ℝ) 1) (h : coverLift hp ⟨i, e₀⟩ x = coverLift hp ⟨i, e₁⟩ x) :
     e₀ = e₁ := by
-  obtain ⟨G, -, hG⟩ := existsUnique_lift hp (cellBallMap i) x _ (coverLift_apply hp ⟨i, e₀⟩ x)
+  obtain ⟨G, -, hG⟩ := hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
+      (cellBallMap i) x _ (coverLift_apply hp ⟨i, e₀⟩ x)
   have := (hG _ ⟨rfl, comp_coverLift hp _⟩).trans (hG _ ⟨h.symm, comp_coverLift hp _⟩).symm
   exact Subtype.ext (by
     rw [← coverLift_ballCentre hp ⟨i, e₀⟩, ← coverLift_ballCentre hp ⟨i, e₁⟩, this])
@@ -322,10 +318,10 @@ theorem nat_card_cell_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.ca
     Nat.card (cell (p ⁻¹' C) n) = d * Nat.card (cell C n) := by
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   have := Fintype.ofFinite (cell C n)
-  rw [nat_card_cell_preimage C hp hfin, finsum_eq_sum_of_fintype,
-    Finset.sum_congr rfl fun i _ ↦ hd _ (closedCell_subset_complex n i
-      (map_zero_mem_closedCell n i)),
-    Finset.sum_const, Finset.card_univ, Nat.card_eq_fintype_card, smul_eq_mul, mul_comm]
+  have hc (i : cell C n) : Nat.card ↥(p ⁻¹' {map n i 0}) = d :=
+    hd _ (closedCell_subset_complex n i (map_zero_mem_closedCell n i))
+  rw [nat_card_cell_preimage C hp hfin, finsum_eq_sum_of_fintype]
+  simp [hc, mul_comm]
 
 include hp hfin in
 /-- The total space of a covering, with finite fibres, of a finite CW complex has finite CW type: it

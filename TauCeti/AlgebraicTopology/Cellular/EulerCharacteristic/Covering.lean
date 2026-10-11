@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Covering
-public import TauCeti.Topology.SeparatedMap
 
 /-!
 # Multiplicativity of the Euler characteristic for finite covers
@@ -100,14 +99,15 @@ theorem eulerChar_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card �
   have := hp.t2Space
   rw [eulerChar_cwComplex, eulerChar_cwComplex, cwEulerChar_preimage_of_card_fiber C hp hfin hd]
 
-include hp hfin in
 /-- **Finite-cover multiplicativity of the Euler characteristic.** If `B` is a finite CW complex
 and `p : E → B` is a covering map all of whose fibres have `d` points, then `χ(E) = d · χ(B)`.
-The space `E` has finite CW type by `IsCoveringMap.finiteCWType`. -/
+The space `E` has finite CW type by `IsCoveringMap.finiteCWType`, which the statement installs. -/
 theorem eulerChar_eq_mul_of_isCoveringMap [CWComplex (univ : Set B)]
-    [RelCWComplex.Finite (univ : Set B)] [FiniteCWType E] [FiniteCWType B] {d : ℕ}
+    [RelCWComplex.Finite (univ : Set B)] [FiniteCWType B] {d : ℕ}
     (hd : ∀ b, Nat.card ↥(p ⁻¹' {b}) = d) :
+    haveI := hp.finiteCWType hfin
     eulerChar E = d * eulerChar B := by
+  have := hp.finiteCWType hfin
   let := cwComplexPreimage univ hp hfin
   have := finite_cwComplexPreimage univ hp hfin
   have := hp.t2Space
