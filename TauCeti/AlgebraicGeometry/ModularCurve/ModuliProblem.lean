@@ -76,7 +76,7 @@ def IsRigid (P : ModuliProblem.{v} B) : Prop :=
 automorphism `σ` of `E/S` over `S` fixing the structure classified by `a : (S, E) ⟶ (M, E_univ)`
 satisfies `σ ≫ a = a`, and `σ` and the identity are then two factorisations of `a` through `a`
 over the identity of `S`, which agree since `a` is cartesian. -/
-theorem isRigid_of_isRepresentable (P : ModuliProblem.{u} B) [P.IsRepresentable] : P.IsRigid := by
+theorem isRigid_of_isRepresentable (P : ModuliProblem.{v} B) [P.IsRepresentable] : P.IsRigid := by
   intro X σ hσ α hα
   let e := P.representableBy
   obtain ⟨a, rfl⟩ := e.homEquiv.surjective α
