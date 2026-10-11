@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TensorProduct.BaseChange
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.InfiniteBaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 
@@ -105,29 +106,20 @@ theorem infiniteAdeleSemilocalHom_algebraMap (x : L) :
 
 variable (K L) in
 /-- **The infinite adeles are the product of the semi-local algebras.** Grouping the infinite
-places of `L` by the infinite place of `K` below them, the semi-local components identify the
-infinite adeles of `L` with `∏_v K_v ⊗[K] L`, the product over the infinite places `v` of `K`. -/
+places of `L` by the infinite place of `K` below them (`infiniteAdelePiLiesOverEquiv`), the
+semi-local components identify the infinite adeles of `L` with `∏_v K_v ⊗[K] L`, the product
+over the infinite places `v` of `K`. -/
 def infiniteAdeleSemilocalEquiv :
-    InfiniteAdeleRing L ≃+* ∀ v : InfinitePlace K, v.Completion ⊗[K] L where
-  toFun a v := infiniteAdeleSemilocalHom L v a
-  invFun y w := infiniteSemilocalEquiv L (w.comap (algebraMap K L))
-    (y (w.comap (algebraMap K L))) ⟨w, inferInstance⟩
-  left_inv a := funext fun w ↦ by
-    simp only [infiniteSemilocalEquiv_infiniteAdeleSemilocalHom]
-  right_inv y := funext fun v ↦ (infiniteSemilocalEquiv L v).injective <|
-    (infiniteSemilocalEquiv_infiniteAdeleSemilocalHom _).trans <| funext fun ⟨w, _⟩ ↦ by
-      -- the place below `w` is `v`
-      obtain rfl := InfinitePlace.LiesOver.comap_eq w v
-      rfl
-  map_mul' a b := funext fun v ↦ map_mul (infiniteAdeleSemilocalHom L v) a b
-  map_add' a b := funext fun v ↦ map_add (infiniteAdeleSemilocalHom L v) a b
+    InfiniteAdeleRing L ≃+* ∀ v : InfinitePlace K, v.Completion ⊗[K] L :=
+  (infiniteAdelePiLiesOverEquiv K L).trans
+    (RingEquiv.piCongrRight fun v ↦ (infiniteSemilocalEquiv L v).symm.toRingEquiv)
 
 /-- The component at `v` of `infiniteAdeleSemilocalEquiv` is the semi-local component above
 `v`. -/
 @[simp]
 theorem infiniteAdeleSemilocalEquiv_apply (a : InfiniteAdeleRing L) (v : InfinitePlace K) :
-    infiniteAdeleSemilocalEquiv K L a v = infiniteAdeleSemilocalHom L v a :=
-  (rfl)
+    infiniteAdeleSemilocalEquiv K L a v = infiniteAdeleSemilocalHom L v a := by
+  simp [infiniteAdeleSemilocalEquiv, infiniteAdeleSemilocalHom_apply, funext_iff]
 
 /-- The inverse of `infiniteAdeleSemilocalEquiv` reads the component at a place `w` of `L` off the
 semi-local factor at the place below `w`. -/
@@ -135,8 +127,8 @@ semi-local factor at the place below `w`. -/
 theorem infiniteAdeleSemilocalEquiv_symm_apply (y : ∀ v : InfinitePlace K, v.Completion ⊗[K] L)
     (w : InfinitePlace L) :
     (infiniteAdeleSemilocalEquiv K L).symm y w = infiniteSemilocalEquiv L
-      (w.comap (algebraMap K L)) (y (w.comap (algebraMap K L))) ⟨w, inferInstance⟩ :=
-  (rfl)
+      (w.comap (algebraMap K L)) (y (w.comap (algebraMap K L))) ⟨w, inferInstance⟩ := by
+  simp [infiniteAdeleSemilocalEquiv]
 
 /-! ### Naturality -/
 

@@ -90,9 +90,7 @@ theorem herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction :
     herbrandQuotient_ofMulAction_infinitePlace_eq_prod]
   refine Finset.prod_congr rfl fun v _ ↦ ?_
   have := (hw v).choose_spec
-  -- both sides are the order of the decomposition group of the chosen place above `v`
-  rw [← card_stabilizer_eq_finrank_completion v (hw v).choose, card_stabilizer,
-    ← isUnramifiedIn_comap, LiesOver.comap_eq (hw v).choose v]
+  rw [finrank_completion_eq_ite v (hw v).choose]
   split <;> simp
 
 end TauCeti.ClassFieldTheory
