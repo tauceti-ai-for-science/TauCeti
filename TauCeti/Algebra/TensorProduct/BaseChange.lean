@@ -34,6 +34,8 @@ with passing to the opposite algebra, and composes in stages:
   `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A` for a tower `K → L → M`.
 * `TauCeti.Algebra.TensorProduct.baseChangeTowerRingEquiv`: the same tower comparison with tensor
   factors in coordinate-ring order, `(L ⊗[K] A) ⊗[L] M ≃+* A ⊗[K] M`.
+* `TauCeti.Algebra.TensorProduct.baseChangeAutHom`: the base change `σ ↦ id ⊗ σ` of
+  automorphisms of `L` along a commutative algebra `A`, acting on `A ⊗[K] L`.
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
 * `TauCeti.ScalarAut.instMulSemiringAction`: scalar automorphisms act on a scalar extension
   through its scalar factor.
@@ -168,6 +170,23 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
   (baseChangeTowerAlgEquiv K L A M).symm_apply_eq.mpr <| by
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
 
+/-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
+scalar extension over their tensor product. -/
+theorem _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
+    (m : M) (l : L) (x : A ⊗[K] B) :
+    Algebra.TensorProduct.map
+        (baseChangeTowerAlgEquiv K L A M).toAlgHom
+        (baseChangeTowerAlgEquiv K L B M).toAlgHom
+      (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange L M
+        (L ⊗[K] A) (L ⊗[K] B)
+        (m ⊗ₜ[L] _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B
+          (l ⊗ₜ[K] x))) =
+      _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K M A B ((l • m) ⊗ₜ[K] x) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | add x y hx hy =>
+      simp only [_root_.TensorProduct.tmul_add, map_add, hx, hy]
+  | tmul a b => simp
+
 end Tower
 
 section RightTower
@@ -199,6 +218,29 @@ theorem baseChangeTowerRingEquiv_symm_tmul (a : A) (m : M) :
   simp [baseChangeTowerRingEquiv]
 
 end RightTower
+
+section AutHom
+
+variable {K : Type*} [CommSemiring K] (A L : Type*) [CommSemiring A] [Algebra K A] [Semiring L]
+  [Algebra K L]
+
+/-- The base change `σ ↦ id ⊗ σ` of automorphisms of `L` along a commutative `K`-algebra `A`,
+as a homomorphism into the `A`-algebra automorphisms of `A ⊗[K] L`. This is the analogue for
+automorphism groups of Mathlib's `Module.End.baseChangeHom`. -/
+noncomputable def baseChangeAutHom : (L ≃ₐ[K] L) →* (A ⊗[K] L ≃ₐ[A] A ⊗[K] L) where
+  toFun σ := Algebra.TensorProduct.congr AlgEquiv.refl σ
+  map_one' := Algebra.TensorProduct.congr_refl
+  map_mul' _ _ := AlgEquiv.coe_toAlgHom_injective (Algebra.TensorProduct.ext' fun _ _ ↦ rfl)
+
+variable {A L}
+
+/-- The base change of an automorphism on a pure tensor. -/
+@[simp]
+theorem baseChangeAutHom_tmul (σ : L ≃ₐ[K] L) (a : A) (x : L) :
+    baseChangeAutHom A L σ (a ⊗ₜ x) = a ⊗ₜ σ x :=
+  (rfl)
+
+end AutHom
 
 end Algebra.TensorProduct
 

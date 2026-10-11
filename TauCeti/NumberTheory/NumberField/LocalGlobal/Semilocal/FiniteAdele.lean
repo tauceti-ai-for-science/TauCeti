@@ -252,8 +252,9 @@ theorem finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction (σ : L ≃ₐ[K] L)
     (a : (FiniteAdeleRing (𝒪 L) L)ˣ) :
     finiteIdeleSemilocalHom L v
         (Units.map (GlobalNumberFields.finiteAdeleGaloisAction K L σ : _ →* _) a) =
-      Units.map (semilocalGaloisHom L v σ : _ →* _) (finiteIdeleSemilocalHom L v a) := by
-  have h : (semilocalGaloisHom L v σ).toAlgHom =
+      Units.map (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ : _ →* _)
+        (finiteIdeleSemilocalHom L v a) := by
+  have h : (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ).toAlgHom =
       Algebra.TensorProduct.map (AlgHom.id _ _) (σ : L →ₐ[K] L) :=
     Algebra.TensorProduct.ext' fun _ _ ↦ by simp
   ext : 1

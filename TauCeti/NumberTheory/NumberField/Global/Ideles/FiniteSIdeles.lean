@@ -23,12 +23,12 @@ A finite idele is determined by its semi-local components in the units of
 `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` (`TauCeti.finiteIdeleSemilocalHom`), and taking components is
 equivariant for the Galois action of `Aut(L/K)` on finite adeles
 (`GlobalNumberFields.finiteAdeleGaloisAction`) and on the semi-local algebras
-(`semilocalGaloisHom`). Together with the assembly of a finite idele from semi-local units
-(`TauCeti.finiteIdeleOfSemilocalUnits`), these identify the finite `S`-ideles, as an integral
-representation of `Aut(L/K)`, with the product over the places of `K` of the semi-local unit groups
-`(K_v ⊗[K] L)ˣ` for `v ∈ S` and of the integral semi-local unit groups for `v ∉ S`
-(`finiteSIdelesPiIso`). This is the form in which the Tate cohomology of the `S`-ideles is computed
-one place at a time, through Shapiro's lemma for each semi-local factor.
+(`Algebra.TensorProduct.baseChangeAutHom`). Together with the assembly of a finite idele from
+semi-local units (`TauCeti.finiteIdeleOfSemilocalUnits`), these identify the finite `S`-ideles,
+as an integral representation of `Aut(L/K)`, with the product over the places of `K` of the
+semi-local unit groups `(K_v ⊗[K] L)ˣ` for `v ∈ S` and of the integral semi-local unit groups for
+`v ∉ S` (`finiteSIdelesPiIso`). This is the form in which the Tate cohomology of the `S`-ideles is
+computed one place at a time, through Shapiro's lemma for each semi-local factor.
 
 ## Main definitions
 
@@ -107,7 +107,7 @@ theorem map_finiteAdeleGaloisAction_mem_finiteSIdeles (σ : L ≃ₐ[K] L)
   rw [mem_finiteSIdeles_iff] at ha ⊢
   intro v hv
   rw [finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction]
-  exact semilocalGaloisHom_mem_semilocalIntegralUnits v σ (ha v hv)
+  exact baseChangeAutHom_mem_semilocalIntegralUnits v σ (ha v hv)
 
 variable (L S) in
 /-- The Galois action of `Aut(L/K)` on the finite `S`-ideles, through the Galois action on finite

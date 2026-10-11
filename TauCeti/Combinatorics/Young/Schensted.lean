@@ -78,6 +78,16 @@ theorem IsRowAbove.append_right [LT α] {upper lower : List α} (h : upper.IsRow
   rw [getElem_append_left (hl.trans_le h.length_le)]
   exact h.getElem_lt j _ hl
 
+/-- If one row sits above a second, and the second above a third, the first sits above the
+third. -/
+theorem IsRowAbove.trans [LT α] [IsTrans α (· < ·)] {upper middle lower : List α}
+    (h₁ : upper.IsRowAbove middle) (h₂ : middle.IsRowAbove lower) : upper.IsRowAbove lower :=
+  ⟨h₂.length_le.trans h₁.length_le, fun j hu hl => IsTrans.trans _ _ _
+    (h₁.getElem_lt j hu (hl.trans_le h₂.length_le)) (h₂.getElem_lt j _ hl)⟩
+
+instance [LT α] [IsTrans α (· < ·)] : IsTrans (List α) IsRowAbove :=
+  ⟨fun _ _ _ => IsRowAbove.trans⟩
+
 /-- The rows, listed from top to bottom, of a semistandard tableau: every row is nonempty and
 weakly increasing, and every row sits on top of the next one in the sense of `List.IsRowAbove`.
 So the row lengths weakly decrease and the columns strictly increase. -/
@@ -293,7 +303,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
       · exact hxy
       · exact (hpre _ (by omega)).trans_lt hxy
   | some w =>
-    obtain ⟨j', hj', hL', hLj', hpre', hyw⟩ :=
+    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
       exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
     -- the first entry of `lower` exceeding `y` is weakly left of column `j`
@@ -343,6 +353,15 @@ theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)} (h : rows.IsT
       ((rowInsert x rows).getD (rowInsertIndex x rows) []).length := by
   rw [length_getD_rowInsert, length_getD_rowInsert, ite_eq_right (by omega), ite_eq_left rfl]
   exact Nat.lt_succ_of_le (h.length_getD_succ_le _)
+
+/-- **A new cell below the first row sits under a longer row**: if `T ← x` adds its cell in row
+`i + 1`, then row `i + 1` of `T` is strictly shorter than row `i`. -/
+theorem length_getD_succ_lt_of_rowInsertIndex_eq_succ {rows : List (List α)}
+    (h : rows.IsTableauRows) {x : α} {i : ℕ} (hi : rowInsertIndex x rows = i + 1) :
+    (rows.getD (i + 1) []).length < (rows.getD i []).length := by
+  have := (h.rowInsert x).length_getD_succ_le i
+  rw [length_getD_rowInsert, length_getD_rowInsert, hi] at this
+  split_ifs at this <;> omega
 
 /-! ### Reverse insertion -/
 
@@ -405,7 +424,8 @@ theorem reverseRowInsert_rowInsert (x : α) {rows : List (List α)} (hne : [] �
         reverseRowBump_rowBump_of_sortedLE x y (hs row mem_cons_self) hb]
 
 /-- At a corner of the first row, a first row with a single entry is the whole tableau. -/
-private theorem eq_nil_of_dropLast_eq_nil {row : List α} {rows : List (List α)}
+private theorem eq_nil_of_dropLast_eq_nil {α : Type*} [Preorder α]
+    {row : List α} {rows : List (List α)}
     (h : (row :: rows).IsTableauRows)
     (hk : ((row :: rows).getD 1 []).length < ((row :: rows).getD 0 []).length)
     (hd : row.dropLast = []) : rows = [] := by
@@ -470,38 +490,49 @@ private theorem reverseStep_reverseRowBump {U L L' : List α} {c : ℕ} {hc : c 
       · exact hUd ▸ hxy
       · exact hUd ▸ hxy.trans_le (hpost j h₂ (by omega))
 
-/-- The invariant of reverse insertion from a corner, proved by induction on the rows: the
-letter returned was ejected from some column `c` of the first row, the result is a tableau, and
-its first row is related to the old first row by `ReverseStep`. -/
+/-- The invariant of reverse insertion from a corner: the letter returned was ejected from
+some column `c` of the first row, the result is a tableau, and its first row satisfies
+`ReverseStep`. Reinserting the returned letter recovers the tableau and the chosen corner. -/
 private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List (List α)}
     (h : rows.IsTableauRows)
     (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length) :
     ∃ c, ∃ hc : c < (rows.headD []).length,
       (reverseRowInsert k rows).2 = some (rows.headD [])[c] ∧
         (reverseRowInsert k rows).1.IsTableauRows ∧
-        ReverseStep (rows.headD []) ((reverseRowInsert k rows).1.headD []) c hc := by
+        ReverseStep (rows.headD []) ((reverseRowInsert k rows).1.headD []) c hc ∧
+        rowInsert (rows.headD [])[c] (reverseRowInsert k rows).1 = rows ∧
+        rowInsertIndex (rows.headD [])[c] (reverseRowInsert k rows).1 = k := by
   induction rows generalizing k with
   | nil => simp at hk
   | cons row rows ih =>
     obtain ⟨hne, hs, habove, hrows⟩ := isTableauRows_cons.mp h
+    simp only [headD_cons]
     cases k with
     | zero =>
       -- remove the last entry of the first row
       have hlen : 0 < row.length := length_pos_iff.mpr hne
-      refine ⟨row.length - 1, by simp; omega, ?_⟩
+      have hlast : row.dropLast ++ [row[row.length - 1]] = row := by
+        simpa only [getLast_eq_getElem] using dropLast_concat_getLast hne
+      have hle : ∀ z ∈ row.dropLast, z ≤ row[row.length - 1] := by
+        have hs' := hs
+        rw [← hlast, sortedLE_append] at hs'
+        exact fun z hz => hs'.2.2 z hz _ mem_cons_self
+      refine ⟨row.length - 1, by omega, ?_⟩
       by_cases hd : row.dropLast = []
       · -- a one-cell first row at a corner is the whole tableau
         obtain rfl := eq_nil_of_dropLast_eq_nil h hk hd
-        refine ⟨?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
         · simp [reverseRowInsert_zero_cons, hd]
         · simp only [reverseRowInsert_zero_cons, ite_eq_left hd, headD_nil]
           exact ⟨by simp, fun _ _ h₂ => absurd h₂ (by simp), fun _ h₂ _ => absurd h₂ (by simp)⟩
+        · simpa [reverseRowInsert_zero_cons, hd] using congrArg (fun r => [r]) hlast
+        · simp [reverseRowInsert_zero_cons, hd]
       · have hk' : (rows.headD []).length ≤ row.dropLast.length := by
           cases rows with
           | nil => simp
           | cons lower rows => simp at hk ⊢; omega
-        refine ⟨?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
         · rw [reverseRowInsert_zero_cons, ite_eq_right hd]
           refine isTableauRows_cons.mpr ⟨hd, sortedLE_iff_pairwise.mpr
@@ -513,17 +544,26 @@ private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List 
           refine ⟨by simp, fun j h₁ h₂ => ?_, fun j h₂ hj => ?_⟩
           · simp [getElem_dropLast]
           · simp at h₂; omega
+        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
+          rw [rowInsert_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle),
+            rowBump_of_forall_le _ _ hle, hlast]
+        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
+          exact rowInsertIndex_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle)
     | succ k =>
-      obtain ⟨c, hc, hret, htab, hstep⟩ := ih hrows (by simpa using hk)
+      obtain ⟨c, hc, hret, htab, hstep, hins, hidx⟩ := ih hrows (by simpa using hk)
       obtain ⟨d, hd, hx, hU, hstep'⟩ := reverseStep_reverseRowBump habove hstep
+      -- Recover the first row by the local inverse, and the remaining rows by induction.
+      have hb := rowBump_reverseRowBump_of_sortedLE _ _ hs hx
       rw [reverseRowInsert_succ_cons_of_eq_some row hret]
-      refine ⟨d, hd, hx, isTableauRows_cons.mpr ⟨?_, ?_, hU, htab⟩, hstep'⟩
+      refine ⟨d, hd, hx, isTableauRows_cons.mpr ⟨?_, ?_, hU, htab⟩, hstep', ?_, ?_⟩
       · intro h0
         have := length_reverseRowBump (rows.headD [])[c] row
         rw [h0, hx] at this
         simp only [length_nil, Option.toList_some, length_singleton, Nat.zero_add] at this
         exact hne (length_eq_zero_iff.mp (by omega))
       · exact sortedLE_reverseRowBump _ hs
+      · rw [rowInsert_cons_of_eq_some _ (by rw [hb]), hb, hins]
+      · rw [rowInsertIndex_cons_of_eq_some _ (by rw [hb]), hidx]
 
 /-- **Reverse insertion preserves tableaux at corners**: reverse inserting from the end of a
 row `k` of a tableau whose next row is strictly shorter yields a tableau. -/
@@ -542,43 +582,8 @@ theorem rowInsert_reverseRowInsert {k : ℕ} {rows : List (List α)} (h : rows.I
     ∃ x, (reverseRowInsert k rows).2 = some x ∧
       rowInsert x (reverseRowInsert k rows).1 = rows ∧
         rowInsertIndex x (reverseRowInsert k rows).1 = k := by
-  induction rows generalizing k with
-  | nil => simp at hk
-  | cons row rows ih =>
-    obtain ⟨hne, hs, -, hrows⟩ := isTableauRows_cons.mp h
-    cases k with
-    | zero =>
-      have hlast : row.dropLast ++ [row.getLast hne] = row := dropLast_concat_getLast hne
-      refine ⟨row.getLast hne,
-        by simp [reverseRowInsert_zero_cons, getLast?_eq_some_getLast hne], ?_⟩
-      have hle : ∀ z ∈ row.dropLast, z ≤ row.getLast hne := by
-        have hs' := hs
-        rw [← hlast, sortedLE_append] at hs'
-        exact fun z hz => hs'.2.2 z hz _ mem_cons_self
-      by_cases hd : row.dropLast = []
-      · -- a one-cell first row at a corner is the whole tableau
-        have hrows0 := eq_nil_of_dropLast_eq_nil h hk hd
-        rw [hd, nil_append] at hlast
-        simp only [reverseRowInsert_zero_cons, ite_eq_left hd, hrows0, rowInsert_nil,
-          rowInsertIndex_nil, and_true]
-        exact congrArg (fun r => [r]) hlast
-      · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
-        have hb : (rowBump (row.getLast hne) row.dropLast).2 = none :=
-          (rowBump_snd_eq_none_iff _ _).mpr hle
-        rw [rowInsert_cons_of_eq_none rows hb, rowInsertIndex_cons_of_eq_none rows hb,
-          rowBump_of_forall_le _ _ hle, hlast]
-        exact ⟨rfl, rfl⟩
-    | succ k =>
-      have hk' : (rows.getD (k + 1) []).length < (rows.getD k []).length := by simpa using hk
-      obtain ⟨y, hy, hins, hidx⟩ := ih hrows hk'
-      obtain ⟨_, _, hret, -, -⟩ := exists_reverseRowInsert_of_isTableauRows h hk
-      rw [reverseRowInsert_succ_cons_of_eq_some row hy] at hret ⊢
-      dsimp only at hret
-      refine ⟨_, hret, ?_⟩
-      have hb := rowBump_reverseRowBump_of_sortedLE _ y hs hret
-      rw [rowInsert_cons_of_eq_some _ (by rw [hb]), rowInsertIndex_cons_of_eq_some _ (by rw [hb]),
-        hb, hins, hidx]
-      exact ⟨rfl, rfl⟩
+  obtain ⟨c, hc, hret, -, -, hins, hidx⟩ := exists_reverseRowInsert_of_isTableauRows h hk
+  exact ⟨_, hret, hins, hidx⟩
 
 /-! ### Insertion as a bijection -/
 

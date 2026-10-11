@@ -118,11 +118,22 @@ theorem head (hKL : ElementaryCollapsesTo K L) (hLP : CollapsesTo L P) : Collaps
 theorem tail (hKL : CollapsesTo K L) (hLP : ElementaryCollapsesTo L P) : CollapsesTo K P :=
   Relation.ReflTransGen.tail hKL hLP
 
+/-- Prove a property of collapse sequences by treating the empty sequence, a single
+elementary collapse, and concatenation. -/
+@[elab_as_elim]
+theorem trans_induction_on
+    {motive : ∀ {K L : _root_.PreAbstractSimplicialComplex ι}, CollapsesTo K L → Prop}
+    (h : CollapsesTo K L) (refl : ∀ K, motive (CollapsesTo.refl K))
+    (single : ∀ {K L} (h : ElementaryCollapsesTo K L), motive (CollapsesTo.single h))
+    (trans : ∀ {K L P} (hKL : CollapsesTo K L) (hLP : CollapsesTo L P),
+      motive hKL → motive hLP → motive (hKL.trans hLP)) : motive h :=
+  Relation.ReflTransGen.trans_induction_on h refl single trans
+
 /-- The endpoint of a collapse is a subcomplex of its starting complex. -/
 theorem le (h : CollapsesTo K L) : L ≤ K := by
   induction h with
   | refl => exact le_rfl
-  | tail hKL hLP ih => exact hLP.le.trans ih
+  | tail _ hLP ih => exact hLP.le.trans ih
 
 /-- If `K` collapses to a complex `L` that contains `K`, then `K` and `L` are equal. -/
 theorem eq_of_le (h : CollapsesTo K L) (hKL : K ≤ L) : K = L :=
@@ -152,7 +163,7 @@ theorem property_of_elementaryCollapsesTo {p : _root_.PreAbstractSimplicialCompl
     (h : CollapsesTo K L) (hK : p K) : p L := by
   induction h with
   | refl => exact hK
-  | tail hAB hBC ih => exact hp hBC ih
+  | tail _ hBC ih => exact hp hBC ih
 
 end CollapsesTo
 
