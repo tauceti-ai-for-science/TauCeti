@@ -13,22 +13,25 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
 # The scheme of a function field glued from two affine charts
 
 Let `F / k` be an algebraic function field and `x ∈ F` nonzero. The places of `F / k` at which `x`
-is regular and those at which `x⁻¹` is regular cover all places, and their holomorphy rings
+is regular and those at which `x⁻¹` is regular cover all places. Their holomorphy rings are
 
 * `𝒪_x = holomorphyRing {P | x ∈ 𝒪_P}`, the integral closure of `k[x]` in `F`, and
-* `𝒪_{x⁻¹} = holomorphyRing {P | x⁻¹ ∈ 𝒪_P}`, the integral closure of `k[x⁻¹]` in `F`,
+* `𝒪_{x⁻¹} = holomorphyRing {P | x⁻¹ ∈ 𝒪_P}`, the integral closure of `k[x⁻¹]` in `F`
 
-are the two affine charts of a curve with function field `F` (for the integral closures, see
-`TauCeti.restrictScalars_integralClosure_adjoin_eq_holomorphyRing`). Both restrict to the holomorphy
-ring `𝒪_{x, x⁻¹}` of the places at which `x` is a unit, which is the localization of `𝒪_x` away
-from `x` and of `𝒪_{x⁻¹}` away from `x⁻¹`
+(for the integral closures, see `TauCeti.restrictScalars_integralClosure_adjoin_eq_holomorphyRing`).
+Both restrict to the holomorphy ring `𝒪_{x, x⁻¹}` of the places at which `x` is a unit, which is
+the localization of `𝒪_x` away from `x` and of `𝒪_{x⁻¹}` away from `x⁻¹`
 (`TauCeti.isLocalization_away_holomorphyRing_inter`). Hence `Spec 𝒪_{x, x⁻¹}` is an open
 subscheme of both `Spec 𝒪_x` and `Spec 𝒪_{x⁻¹}`, and gluing the two charts along it, as the
-pushout of these two open immersions, gives the scheme `TauCeti.AlgebraicGeometry.twoChartModel`.
-For `F = k(x)` the two charts are `Spec k[x]` and `Spec k[x⁻¹]`, glued into the projective line;
-in general the two charts are the normalizations in `F` of the two standard affine charts of the
-projective line, and this is the gluing from which the normalization of the projective line in `F`
-is built.
+pushout of these two open immersions, gives the integral scheme
+`TauCeti.AlgebraicGeometry.twoChartModel`; this is defined for every nonzero `x`.
+
+When `x` is transcendental over `k`, `Spec 𝒪_x` and `Spec 𝒪_{x⁻¹}` are the two affine charts of a
+curve with function field `F`. For `F = k(x)` they are `Spec k[x]` and `Spec k[x⁻¹]`, glued into
+the projective line; in general they are the normalizations in `F` of the two standard affine
+charts of the projective line, and this is the gluing from which the normalization of the
+projective line in `F` is built. (When `x` is algebraic over `k`, `x` and `x⁻¹` are regular at
+every place, and the construction does not have this interpretation.)
 
 This file proves that the glued scheme is an integral scheme over `k`, covered by the two charts,
 and that for transcendental `x` its function field is `F` as a `k`-algebra.
@@ -77,9 +80,12 @@ variable {k F : Type u} [Field k] [Field F] [Algebra k F]
 immersion**: if `T = S ∩ {P | x⁻¹ ∈ 𝒪_P}` for a nonzero `x ∈ 𝒪_S`, then `Spec 𝒪_T → Spec 𝒪_S` is
 an open immersion, the scheme-level form of `TauCeti.isLocalization_away_holomorphyRing_inter`. -/
 theorem isOpenImmersion_specMap_inclusion_holomorphyRing (hF : IsFunctionField k F)
-    {S T : Set (Place k F)} (h : holomorphyRing S ≤ holomorphyRing T) (x : holomorphyRing S)
-    (hx : (x : F) ≠ 0) (hT : T = S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers}) :
-    IsOpenImmersion (Spec.map (CommRingCat.ofHom (Subalgebra.inclusion h).toRingHom)) := by
+    {S T : Set (Place k F)} (x : holomorphyRing S) (hx : (x : F) ≠ 0)
+    (hT : T = S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers}) :
+    IsOpenImmersion (Spec.map (CommRingCat.ofHom (Subalgebra.inclusion
+      (holomorphyRing_antitone (hT.trans_le Set.inter_subset_left))).toRingHom)) := by
+  have h : holomorphyRing S ≤ holomorphyRing T :=
+    holomorphyRing_antitone (hT.trans_le Set.inter_subset_left)
   let := (Subalgebra.inclusion h).toRingHom.toAlgebra
   have : IsScalarTower (holomorphyRing S) (holomorphyRing T) F :=
     IsScalarTower.of_algebraMap_eq fun a ↦ (Subalgebra.coe_inclusion h a).symm
@@ -107,7 +113,7 @@ theorem isOpenImmersion_specMap_finiteChartRestriction (hF : IsFunctionField k F
     (hx : x ≠ 0) :
     IsOpenImmersion
       (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom)) :=
-  isOpenImmersion_specMap_inclusion_holomorphyRing hF _
+  isOpenImmersion_specMap_inclusion_holomorphyRing hF
     ⟨x, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ hx rfl
 
 /-- `Spec 𝒪_{x, x⁻¹} → Spec 𝒪_{x⁻¹}` is an open immersion: the restriction to the overlap is the
@@ -116,9 +122,10 @@ theorem isOpenImmersion_specMap_infinityChartRestriction (hF : IsFunctionField k
     (hx : x ≠ 0) :
     IsOpenImmersion
       (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom)) :=
-  isOpenImmersion_specMap_inclusion_holomorphyRing hF _
+  isOpenImmersion_specMap_inclusion_holomorphyRing hF
+    (T := {P | x ∈ P.integers} ∩ {P | x⁻¹ ∈ P.integers})
     ⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ (inv_ne_zero hx)
-    (by rw [inv_inv, Set.inter_comm])
+    (by rw [inv_inv, Set.inter_comm]; rfl)
 
 end twoChartModel
 
