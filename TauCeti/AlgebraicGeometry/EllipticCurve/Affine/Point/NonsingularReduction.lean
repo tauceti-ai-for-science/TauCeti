@@ -7,47 +7,53 @@ module
 
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Reduction
--- Proof-only: one Bosma–Lenstra law computes a sum over a local ring and its residue field.
+-- Proof-only: one Bosma–Lenstra law computes a sum over a local ring and all its residue fields.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.LocalRing
 
 /-!
-# The points with nonsingular reduction
+# Points with nonsingular reduction
 
-Let `v` be a valuation on a field `F`, with valuation ring `O` and residue field `k`, and let `W` be
-a Weierstrass curve over `F` with an integral model `W_O` over `O`, reducing to the Weierstrass
-curve `W_k = W_O ⊗ k`. No hypothesis is made on the discriminant: `W_k` may be singular. This file
-constructs the subgroup `E₀(F)` of the points of `W(F)` whose reduction is a nonsingular point of
-`W_k`, and the reduction homomorphism `E₀(F) →+ W_k(k)` to the group of nonsingular points of
-`W_k`, which is Mathlib's `WeierstrassCurve.Affine.Point` of the reduced curve. Its kernel is the
-kernel of reduction `E₁(F)`, the points whose `x`-coordinate has a pole, and it is surjective when
-`O` is Henselian. Together these are the exact sequence `0 → E₁(F) → E₀(F) → W_k(k) → 0` of
-Silverman VII.2.1, there stated over a complete discrete valuation ring.
+Let `v` be a valuation on a field `F`, with valuation ring `O` and residue field `k`, and let `W`
+be a Weierstrass curve over `F` with an integral model `W_O` over `O`. Every point of `W(F)` reduces
+to a `k`-point of the reduced curve `W_k = W_O ⊗ k` (`WeierstrassCurve.Affine.Point.reduction`).
+When `W_k` is singular, the reduction of a point may be its singular point. This file defines the
+subgroup
 
-Additivity rests on the two Bosma–Lenstra addition laws. They never vanish together at two
-nonsingular points of a Weierstrass curve over a field, singular or not, so at primitive integral
-representatives `X` and `Y` of two points of `E₀(F)` one coordinate of one of the laws is a unit of
-`O` (`WeierstrassCurve.Projective.exists_isUnimodular_map_equiv_add_of_nonsingular`). That law is
-a primitive integral vector representing both the sum over `F` and the sum of the reductions over
-`k`. Surjectivity is Hensel's lemma applied to the Weierstrass equation in whichever variable has a
-nonvanishing partial derivative at the point of `W_k`
+`E₀(F) = {P ∈ W(F) | the reduction of P is a nonsingular point of W_k}`
+
+and shows that reduction is a group homomorphism `E₀(F) →+ W_k,ns(k)` to the group of nonsingular
+points of `W_k`, whose kernel is the kernel of reduction `E₁(F)`: the point at infinity together
+with the points whose `x`-coordinate has a pole. This is the left-exact part of Silverman's exact
+sequence `0 → E₁(F) → E₀(F) → W_k,ns(k) → 0` (AEC VII.2.1), for an arbitrary valuation and an
+arbitrary integral model. The hypotheses are those of the statement: neither ellipticity of `W`,
+minimality of `W_O`, discreteness of `v` nor completeness of `F` is assumed.
+
+The sequence is also right-exact when `O` is Henselian, for instance complete: the reduction
+homomorphism is then surjective. This is Hensel's lemma applied to the Weierstrass equation in
+whichever variable has a nonvanishing partial derivative at the point of `W_k`
 (`WeierstrassCurve.Affine.exists_nonsingular_residue_eq`).
 
 ## Main definitions
 
-* `WeierstrassCurve.Affine.Point.nonsingularReduction`: the subgroup `E₀(F)` of points with
-  nonsingular reduction.
-* `WeierstrassCurve.Affine.Point.nonsingularReductionHom`: the reduction homomorphism
-  `E₀(F) →+ W_k(k)`.
+* `WeierstrassCurve.Affine.nonsingularReduction`: the subgroup `E₀(F)` of points whose
+  reduction is a nonsingular point of the reduced curve.
+* `WeierstrassCurve.Affine.nonsingularReductionHom`: the reduction homomorphism
+  `E₀(F) →+ W_k,ns(k)`.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.Point.reduction_add_of_nonsingularLift`: reduction commutes with
-  addition of two points with nonsingular reduction.
-* `WeierstrassCurve.Affine.Point.nonsingularReductionHom_eq_zero_iff`: the kernel of the reduction
-  homomorphism consists of the point at infinity and the points whose `x`-coordinate has a pole.
+* `WeierstrassCurve.Affine.Point.reduction_add_of_nonsingularLift`: if `P` and `Q` reduce to
+  nonsingular points, then the reduction of `P + Q` is the sum of their reductions.
+* `WeierstrassCurve.Affine.some_mem_nonsingularReduction_iff`: an affine point with integral
+  coordinates lies in `E₀(F)` exactly when the residues of its coordinates form a nonsingular point
+  of the reduced curve.
+* `WeierstrassCurve.Affine.mem_nonsingularReduction_of_one_lt`: the kernel of reduction is
+  contained in `E₀(F)`.
+* `WeierstrassCurve.Affine.nonsingularReductionHom_eq_zero_iff`: the kernel of the reduction
+  homomorphism is the kernel of reduction `E₁(F)`.
 * `WeierstrassCurve.Affine.exists_nonsingular_residue_eq`: over a Henselian local ring, every
-  nonsingular point of the reduced curve lifts to a nonsingular point.
-* `WeierstrassCurve.Affine.Point.nonsingularReductionHom_surjective`: if the valuation ring is
+  nonsingular point of the reduced curve is the residue of a nonsingular point.
+* `WeierstrassCurve.Affine.nonsingularReductionHom_surjective`: if the valuation ring is
   Henselian, the reduction homomorphism is surjective.
 
 ## References
@@ -132,17 +138,15 @@ theorem exists_nonsingular_residue_eq {x₀ y₀ : R}
 
 end Hensel
 
+variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
+  {W : Affine F} [IsIntegral v.valuationSubring W] [DecidableEq F]
+
 namespace Point
 
-variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
-  {W : Affine F} [IsIntegral v.valuationSubring W]
-
-/-! ### Reduction of a sum -/
-
-/-- **Reduction commutes with addition of points with nonsingular reduction.** If the reductions
-of `P` and `Q` are nonsingular points of the reduced curve, the reduction of `P + Q` is the sum of
-the reductions on the reduced curve. No hypothesis on the discriminant is needed. -/
-theorem reduction_add_of_nonsingularLift [DecidableEq F] {P Q : W.Point}
+/-- **Reduction commutes with addition on points with nonsingular reduction.** If `P` and `Q`
+reduce to nonsingular points of the reduced curve, then the reduction of `P + Q` is the sum of the
+reductions of `P` and `Q` on the reduced curve. -/
+theorem reduction_add_of_nonsingularLift {P Q : W.Point}
     (hP : ((integralModel v.valuationSubring W).map
       (residue v.valuationSubring)).toProjective.NonsingularLift (reduction v P))
     (hQ : ((integralModel v.valuationSubring W).map
@@ -150,112 +154,108 @@ theorem reduction_add_of_nonsingularLift [DecidableEq F] {P Q : W.Point}
     reduction v (P + Q) =
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toProjective.addMap
         (reduction v P) (reduction v Q) := by
+  -- Write `P` and `Q` as classes of primitive integral vectors `X` and `Y`. Their residues are
+  -- nonsingular points of the reduced curve, where the two Bosma–Lenstra laws do not vanish
+  -- simultaneously, so some coordinate of one of the laws at `(X, Y)` is a unit. That law is then
+  -- a primitive integral vector `S` whose class is `P + Q` over `F` and whose reduction is the sum
+  -- of the reductions of `X` and `Y` over the residue field.
   obtain ⟨X, hX, hX₁, hPX⟩ := exists_isUnimodular_toProjective_point_eq v P
   obtain ⟨Y, hY, hY₁, hQY⟩ := exists_isUnimodular_toProjective_point_eq v Q
-  rw [reduction_eq_mk v hX₁ hPX] at hP
-  rw [reduction_eq_mk v hY₁ hQY] at hQ
-  -- one primitive integral vector `S` represents both the sum and the sum of the reductions
-  obtain ⟨S, -, hS₁, hS⟩ :=
-    Projective.exists_isUnimodular_map_equiv_add_of_nonsingular hX hY hP hQ
+  rw [reduction_eq_mk v hX₁ hPX, Projective.nonsingularLift_iff] at hP
+  rw [reduction_eq_mk v hY₁ hQY, Projective.nonsingularLift_iff] at hQ
+  obtain ⟨S, -, hS₁, hS⟩ := Projective.exists_isUnimodular_map_equiv_add hX hY hP hQ
   -- `baseChange` is `map` along `algebraMap`
   have hW : (integralModel v.valuationSubring W).toProjective.map
       (algebraMap v.valuationSubring F) = W.toProjective :=
     baseChange_integralModel_eq v.valuationSubring W
-  -- over `F`, the representatives of `P` and `Q` are nonsingular
-  have hXF := hPX ▸ P.toProjective.nonsingular
-  have hYF := hQY ▸ Q.toProjective.nonsingular
-  rw [← hW] at hXF hYF
   have hPQ : (P + Q).toProjective.point = ⟦algebraMap v.valuationSubring F ∘ S⟧ := by
     have hadd : (P + Q).toProjective = P.toProjective + Q.toProjective := by
       simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
         _root_.map_add (Projective.Point.toAffineAddEquiv W.toProjective).symm P Q
-    have hSF := hS (algebraMap v.valuationSubring F) hXF hYF
+    have hSF := hS (algebraMap v.valuationSubring F)
     rw [hW] at hSF
     rw [hadd, Projective.Point.add_point, hPX, hQY, Projective.addMap_eq]
     exact (Quotient.sound hSF).symm
   rw [reduction_eq_mk v hS₁ hPQ, reduction_eq_mk v hX₁ hPX, reduction_eq_mk v hY₁ hQY,
     Projective.addMap_eq]
-  exact Quotient.sound (hS (residue v.valuationSubring) hP hQ)
+  exact Quotient.sound (hS (residue v.valuationSubring))
 
-/-! ### The subgroup `E₀` -/
-
-variable [DecidableEq F]
+end Point
 
 variable (W) in
-/-- **The points with nonsingular reduction**, the subgroup `E₀(F)` of `W(F)` of points whose
-reduction is a nonsingular point of the reduced curve. When the integral model has unit
-discriminant every point lies in it; in general it contains the points whose `x`-coordinate has a
-pole (`some_mem_nonsingularReduction_of_one_lt`), and an affine point with integral coordinates lies
-in it exactly when the residues of its coordinates are a nonsingular point
-(`some_mem_nonsingularReduction_iff_of_valuation_le_one`). -/
+/-- **The subgroup `E₀(F)` of points with nonsingular reduction**: the points of `W(F)` whose
+reduction is a nonsingular point of the reduced curve. -/
 noncomputable def nonsingularReduction : AddSubgroup W.Point where
   carrier := {P | ((integralModel v.valuationSubring W).map
-    (residue v.valuationSubring)).toProjective.NonsingularLift (reduction v P)}
+    (residue v.valuationSubring)).toProjective.NonsingularLift (Point.reduction v P)}
   zero_mem' := by
-    simpa only [Set.mem_ofPred_eq, reduction_zero] using Projective.nonsingularLift_zero
+    rw [Set.mem_ofPred_eq, Point.reduction_zero, Projective.nonsingularLift_iff]
+    exact Projective.nonsingular_zero
   add_mem' {P Q} hP hQ := by
-    simp only [Set.mem_ofPred_eq, reduction_add_of_nonsingularLift v hP hQ]
+    rw [Set.mem_ofPred_eq, Point.reduction_add_of_nonsingularLift v hP hQ]
     exact Projective.nonsingularLift_addMap hP hQ
   neg_mem' {P} hP := by
-    simp only [Set.mem_ofPred_eq, reduction_neg]
+    rw [Set.mem_ofPred_eq, Point.reduction_neg]
     exact Projective.nonsingularLift_negMap hP
 
+/-- A point lies in `E₀(F)` exactly when its reduction is a nonsingular point of the reduced curve.
+-/
 theorem mem_nonsingularReduction_iff {P : W.Point} :
-    P ∈ nonsingularReduction v W ↔ ((integralModel v.valuationSubring W).map
-      (residue v.valuationSubring)).toProjective.NonsingularLift (reduction v P) :=
+    P ∈ W.nonsingularReduction v ↔ ((integralModel v.valuationSubring W).map
+      (residue v.valuationSubring)).toProjective.NonsingularLift (Point.reduction v P) :=
   Iff.rfl
 
-/-- An affine point with integral `x`-coordinate, whose `y`-coordinate is then integral too, has
-nonsingular reduction exactly when the residues of its coordinates are a nonsingular point of the
-reduced curve. -/
+/-- An affine point with integral `x`-coordinate has nonsingular reduction exactly when the
+residues of its coordinates form a nonsingular point of the reduced curve. -/
 @[simp]
-theorem some_mem_nonsingularReduction_iff_of_valuation_le_one {x y : F} (h : W.Nonsingular x y)
-    (hx : v x ≤ 1) :
-    some x y h ∈ nonsingularReduction v W ↔
-      ((integralModel v.valuationSubring W).map
-        (residue v.valuationSubring)).toAffine.Nonsingular
-          (residue _ ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
-          (residue _ ⟨y, (v.mem_valuationSubring_iff y).mpr
-            (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩) := by
-  rw [mem_nonsingularReduction_iff, reduction_some_of_valuation_le_one v h hx,
+theorem some_mem_nonsingularReduction_iff {x y : F} (h : W.Nonsingular x y) (hx : v x ≤ 1) :
+    Point.some x y h ∈ W.nonsingularReduction v ↔
+      ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Nonsingular
+        (residue _ ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
+        (residue _ ⟨y, (v.mem_valuationSubring_iff y).mpr
+          (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩) := by
+  rw [mem_nonsingularReduction_iff, Point.reduction_some_of_valuation_le_one v h hx,
     Projective.nonsingularLift_some]
 
-/-- A point whose `x`-coordinate has a pole reduces to the point at infinity, which is nonsingular,
-so it has nonsingular reduction. -/
-@[simp]
-theorem some_mem_nonsingularReduction_of_one_lt {x y : F} (h : W.Nonsingular x y)
-    (hx : 1 < v x) : some x y h ∈ nonsingularReduction v W := by
-  rw [mem_nonsingularReduction_iff, reduction_some_of_one_lt v h hx]
-  exact Projective.nonsingularLift_zero
-
-/-! ### The reduction homomorphism on `E₀` -/
+/-- **The kernel of reduction is contained in `E₀(F)`**: a point whose `x`-coordinate has a pole
+reduces to the point at infinity, which is nonsingular. -/
+theorem mem_nonsingularReduction_of_one_lt {P : W.Point} (hP : 1 < v P.xCoord) :
+    P ∈ W.nonsingularReduction v := by
+  rw [mem_nonsingularReduction_iff, (Point.reduction_eq_zero_iff v P).mpr (.inr hP),
+    Projective.nonsingularLift_iff]
+  exact Projective.nonsingular_zero
 
 variable [DecidableEq (ResidueField v.valuationSubring)]
 
 variable (W) in
-/-- **The reduction homomorphism** on the points with nonsingular reduction, a group homomorphism
-`E₀(F) →+ W_k(k)` to the nonsingular points of the reduced curve: a point with integral
+/-- **The reduction homomorphism** `E₀(F) →+ W_k,ns(k)`, from the points with nonsingular
+reduction to the group of nonsingular points of the reduced curve. A point with integral
 `x`-coordinate goes to the residues of its coordinates
 (`nonsingularReductionHom_some_of_valuation_le_one`), and the other points go to the point at
 infinity. -/
 noncomputable def nonsingularReductionHom :
-    nonsingularReduction v W →+
+    W.nonsingularReduction v →+
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Point where
-  toFun P := Projective.Point.toAffineLift ⟨P.2⟩
+  toFun P := (⟨P.2⟩ : Projective.Point _).toAffineLift
   map_zero' := by
-    rw [← Projective.Point.toAffineLift_zero]
-    exact congrArg _ (Projective.Point.ext (reduction_zero v))
+    have h0 : (⟨(W.nonsingularReduction v).zero_mem⟩ : Projective.Point _) = 0 :=
+      Projective.Point.ext ((Point.reduction_zero (W := W) v).trans
+        Projective.Point.zero_point.symm)
+    exact h0 ▸ Projective.Point.toAffineLift_zero
   map_add' P Q := by
-    rw [← Projective.Point.toAffineLift_add]
-    exact congrArg _ (Projective.Point.ext (reduction_add_of_nonsingularLift v P.2 Q.2))
+    have hadd : (⟨(P + Q).2⟩ : Projective.Point _) = ⟨P.2⟩ + ⟨Q.2⟩ :=
+      Projective.Point.ext ((Point.reduction_add_of_nonsingularLift v P.2 Q.2).trans
+        (Projective.Point.add_point ⟨P.2⟩ ⟨Q.2⟩).symm)
+    exact hadd ▸ Projective.Point.toAffineLift_add _ _
 
 /-- The reduction homomorphism, read in projective coordinates, is the reduction of points. -/
 @[simp]
-theorem nonsingularReductionHom_toProjective_point (P : nonsingularReduction v W) :
-    (nonsingularReductionHom v W P).toProjective.point = reduction v (P : W.Point) :=
+theorem nonsingularReductionHom_toProjective_point (P : W.nonsingularReduction v) :
+    (W.nonsingularReductionHom v P).toProjective.point = Point.reduction v (P : W.Point) :=
+  -- `nonsingularReductionHom v P` is `toAffineLift` of the nonsingular projective point `⟨P.2⟩`
   congrArg Projective.Point.point ((Projective.Point.toAffineAddEquiv _).symm_apply_apply ⟨P.2⟩)
 
-/-- A point with integral `x`-coordinate and nonsingular reduction reduces to the residues of its
+/-- A point with nonsingular reduction and integral `x`-coordinate reduces to the residues of its
 coordinates. -/
 theorem nonsingularReductionHom_some_of_valuation_le_one {x y : F} (h : W.Nonsingular x y)
     (hx : v x ≤ 1)
@@ -264,26 +264,21 @@ theorem nonsingularReductionHom_some_of_valuation_le_one {x y : F} (h : W.Nonsin
         (residue _ ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
         (residue _ ⟨y, (v.mem_valuationSubring_iff y).mpr
           (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩)) :
-    nonsingularReductionHom v W
-        ⟨some x y h, (some_mem_nonsingularReduction_iff_of_valuation_le_one v h hx).mpr h'⟩ =
-      some _ _ h' :=
-  (Projective.Point.toAffineAddEquiv _).symm.injective <| Projective.Point.ext <|
-    (nonsingularReductionHom_toProjective_point v _).trans
-      (reduction_some_of_valuation_le_one v h hx)
+    W.nonsingularReductionHom v
+        ⟨Point.some x y h, (some_mem_nonsingularReduction_iff v h hx).mpr h'⟩ =
+      Point.some _ _ h' := by
+  apply (Projective.Point.toAffineAddEquiv _).symm.injective
+  rw [Projective.Point.toAffineAddEquiv_symm_apply, Projective.Point.toAffineAddEquiv_symm_apply,
+    Projective.Point.fromAffine_some]
+  exact Projective.Point.ext ((nonsingularReductionHom_toProjective_point v _).trans
+    (Point.reduction_some_of_valuation_le_one v h hx))
 
-/-- A point whose `x`-coordinate has a pole reduces to the point at infinity. -/
-@[simp]
-theorem nonsingularReductionHom_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
-    nonsingularReductionHom v W ⟨some x y h, some_mem_nonsingularReduction_of_one_lt v h hx⟩ = 0 :=
-  (Projective.Point.toAffineAddEquiv _).symm.injective <| Projective.Point.ext <|
-    (nonsingularReductionHom_toProjective_point v _).trans (reduction_some_of_one_lt v h hx)
-
-/-- **The kernel of reduction** on `E₀(F)`: a point with nonsingular reduction reduces to the point
-at infinity exactly when it is the point at infinity or its `x`-coordinate has a pole. These points
-form the kernel of reduction `E₁(F)`. -/
-theorem nonsingularReductionHom_eq_zero_iff (P : nonsingularReduction v W) :
-    nonsingularReductionHom v W P = 0 ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
-  rw [← reduction_eq_zero_iff, ← nonsingularReductionHom_toProjective_point,
+/-- **The kernel of the reduction homomorphism is the kernel of reduction** `E₁(F)`: a point with
+nonsingular reduction reduces to the point at infinity exactly when it is the point at infinity or
+its `x`-coordinate has a pole. -/
+theorem nonsingularReductionHom_eq_zero_iff (P : W.nonsingularReduction v) :
+    W.nonsingularReductionHom v P = 0 ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
+  rw [← Point.reduction_eq_zero_iff, ← nonsingularReductionHom_toProjective_point,
     ← (Projective.Point.toAffineAddEquiv _).symm.injective.eq_iff, _root_.map_zero,
     Projective.Point.toAffineAddEquiv_symm_apply, Projective.Point.ext_iff,
     Projective.Point.zero_point]
@@ -292,9 +287,9 @@ theorem nonsingularReductionHom_eq_zero_iff (P : nonsingularReduction v W) :
 complete, every nonsingular point of the reduced curve is the reduction of a point of `W(F)` with
 nonsingular reduction. -/
 theorem nonsingularReductionHom_surjective [HenselianLocalRing v.valuationSubring] :
-    Function.Surjective (nonsingularReductionHom v W) := by
+    Function.Surjective (W.nonsingularReductionHom v) := by
   rintro (_ | ⟨a, b, hab⟩)
-  · exact ⟨0, by rw [_root_.map_zero]; rfl⟩
+  · exact ⟨0, _root_.map_zero _⟩
   obtain ⟨x₀, rfl⟩ := residue_surjective a
   obtain ⟨y₀, rfl⟩ := residue_surjective b
   obtain ⟨x, y, hxy, hx, hy⟩ := exists_nonsingular_residue_eq hab
@@ -304,11 +299,11 @@ theorem nonsingularReductionHom_surjective [HenselianLocalRing v.valuationSubrin
       (IsFractionRing.injective v.valuationSubring F) x y).mpr hxy
     rwa [← baseChange_integralModel_eq v.valuationSubring W]
   have hxv : v (x : F) ≤ 1 := (v.mem_valuationSubring_iff _).mp x.2
-  refine ⟨⟨some _ _ hF, (some_mem_nonsingularReduction_iff_of_valuation_le_one v hF hxv).mpr
+  refine ⟨⟨Point.some _ _ hF, (some_mem_nonsingularReduction_iff v hF hxv).mpr
     (hx ▸ hy ▸ hab)⟩, ?_⟩
   rw [nonsingularReductionHom_some_of_valuation_le_one v hF hxv (hx ▸ hy ▸ hab)]
   simp only [hx, hy]
 
-end WeierstrassCurve.Affine.Point
+end WeierstrassCurve.Affine
 
 end

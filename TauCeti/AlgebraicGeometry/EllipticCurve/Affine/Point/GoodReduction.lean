@@ -19,14 +19,13 @@ a Weierstrass curve over `F` with an integral model `W_O` over `O` whose discrim
 `O`, so that `W` has good reduction and the reduced curve `W_k = W_O ⊗ k` is an elliptic curve. This
 file shows that reduction of points (`WeierstrassCurve.Affine.Point.reduction`) is then a group
 homomorphism `W(F) →+ W_k(k)`: Silverman VII.2.1 in the case of good reduction, where the subgroup
-`E₀(F)` of points with nonsingular reduction is all of `W(F)`. Its kernel is the kernel of
-reduction `E₁(F)`, the points whose `x`-coordinate has a pole, and it is surjective when `O` is
-Henselian.
+`E₀(F)` of points with nonsingular reduction (`WeierstrassCurve.Affine.nonsingularReduction`) is all
+of `W(F)`. Its kernel is the kernel of reduction `E₁(F)`, the points whose `x`-coordinate has a
+pole, and it is surjective when `O` is Henselian.
 
-Every point of `W(F)` has a primitive integral representative, and its reduction is a nonzero
-solution of the equation of the elliptic curve `W_k`, hence a nonsingular point. So `E₀(F)` is all
-of `W(F)` (`WeierstrassCurve.Affine.Point.nonsingularReduction_eq_top`), and everything here is
-the reduction homomorphism on `E₀(F)` (`Affine/Point/NonsingularReduction.lean`) read on `W(F)`.
+Since the reduced curve is elliptic, every point of it is nonsingular, so every point of `W(F)` has
+nonsingular reduction. The reduction homomorphism is then the homomorphism
+`WeierstrassCurve.Affine.nonsingularReductionHom` on `E₀(F) = W(F)`.
 
 ## Main definitions
 
@@ -37,7 +36,7 @@ the reduction homomorphism on `E₀(F)` (`Affine/Point/NonsingularReduction.lean
 
 * `WeierstrassCurve.Affine.Point.nonsingularLift_reduction`: at good reduction, every point reduces
   to a nonsingular point of the reduced curve.
-* `WeierstrassCurve.Affine.Point.nonsingularReduction_eq_top`: at good reduction, every point has
+* `WeierstrassCurve.Affine.nonsingularReduction_eq_top`: at good reduction, every point has
   nonsingular reduction.
 * `WeierstrassCurve.Affine.Point.reduction_add`: at good reduction, reduction commutes with
   addition.
@@ -49,6 +48,8 @@ the reduction homomorphism on `E₀(F)` (`Affine/Point/NonsingularReduction.lean
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.2.1.
+* W. Bosma and H. W. Lenstra, Jr., *Complete systems of two addition laws for elliptic curves*,
+  J. Number Theory 53 (1995), 229–240.
 -/
 
 public section
@@ -75,9 +76,10 @@ theorem nonsingularLift_reduction (P : W.Point) :
 
 variable [DecidableEq F]
 
-/-- **At good reduction, every point has nonsingular reduction**: the subgroup `E₀(F)` is all of
-`W(F)`. -/
-theorem nonsingularReduction_eq_top : nonsingularReduction v W = ⊤ :=
+/-- **At good reduction, every point has nonsingular reduction**: `E₀(F) = W(F)`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.nonsingularReduction_eq_top :
+    W.nonsingularReduction v = ⊤ :=
   eq_top_iff.mpr fun P _ ↦ (mem_nonsingularReduction_iff v).mpr (nonsingularLift_reduction v P)
 
 /-- **At good reduction, reduction commutes with addition.** If the integral model of `W` has unit
@@ -96,25 +98,24 @@ variable [DecidableEq (ResidueField v.valuationSubring)]
 discriminant, reduction of points is a group homomorphism `W(F) →+ W_k(k)` to the points of the
 reduced curve: a point with integral `x`-coordinate goes to the residues of its coordinates
 (`reductionHom_some_of_valuation_le_one`), and the other points go to the point at infinity. It is
-the reduction homomorphism `nonsingularReductionHom` on `E₀(F) = W(F)`. -/
+the reduction homomorphism `WeierstrassCurve.Affine.nonsingularReductionHom` on `E₀(F) = W(F)`. -/
 noncomputable def reductionHom :
     W.Point →+
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Point :=
-  (nonsingularReductionHom v W).comp
-    ((AddMonoidHom.id W.Point).codRestrict _ fun P ↦
-      (mem_nonsingularReduction_iff v).mpr (nonsingularLift_reduction v P))
+  (W.nonsingularReductionHom v).comp <| (AddMonoidHom.id W.Point).codRestrict _
+    fun P ↦ (mem_nonsingularReduction_iff v).mpr (nonsingularLift_reduction v P)
 
-/-- At good reduction, the reduction homomorphism is the reduction homomorphism on `E₀(F)`. -/
-theorem reductionHom_apply (P : W.Point) :
-    reductionHom v P = nonsingularReductionHom v W
-      ⟨P, (mem_nonsingularReduction_iff v).mpr (nonsingularLift_reduction v P)⟩ :=
+/-- At good reduction, the reduction homomorphism is the reduction homomorphism on points with
+nonsingular reduction. -/
+theorem reductionHom_apply (P : W.Point) (hP : P ∈ W.nonsingularReduction v) :
+    reductionHom v P = W.nonsingularReductionHom v ⟨P, hP⟩ :=
   (rfl)
 
 /-- The reduction homomorphism, read in projective coordinates, is the reduction of points. -/
 @[simp]
 theorem reductionHom_toProjective_point (P : W.Point) :
     (reductionHom v P).toProjective.point = reduction v P := by
-  rw [reductionHom_apply, nonsingularReductionHom_toProjective_point]
+  rw [reductionHom_apply v P (by simp), nonsingularReductionHom_toProjective_point]
 
 /-- At good reduction, a point with integral `x`-coordinate reduces to the residues of its
 coordinates. -/
@@ -125,26 +126,27 @@ theorem reductionHom_some_of_valuation_le_one {x y : F} (h : W.Nonsingular x y) 
         (residue _ ⟨y, (v.mem_valuationSubring_iff y).mpr
           (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩)) :
     reductionHom v (some x y h) = some _ _ h' := by
-  rw [reductionHom_apply, nonsingularReductionHom_some_of_valuation_le_one v h hx h']
-
-/-- At good reduction, a point whose `x`-coordinate has a pole reduces to the point at infinity. -/
-@[simp]
-theorem reductionHom_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
-    reductionHom v (some x y h) = 0 := by
-  rw [reductionHom_apply, nonsingularReductionHom_some_of_one_lt v h hx]
+  rw [reductionHom_apply v _ ((some_mem_nonsingularReduction_iff v h hx).mpr h')]
+  exact nonsingularReductionHom_some_of_valuation_le_one v h hx h'
 
 /-- **The kernel of reduction** at good reduction: a point reduces to the point at infinity exactly
 when it is the point at infinity or its `x`-coordinate has a pole. -/
 theorem reductionHom_eq_zero_iff (P : W.Point) :
     reductionHom v P = 0 ↔ P = 0 ∨ 1 < v P.xCoord := by
-  rw [reductionHom_apply, nonsingularReductionHom_eq_zero_iff]
+  rw [reductionHom_apply v P (by simp), nonsingularReductionHom_eq_zero_iff]
+
+/-- At good reduction, a point whose `x`-coordinate has a pole reduces to the point at infinity. -/
+@[simp]
+theorem reductionHom_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
+    reductionHom v (some x y h) = 0 :=
+  (reductionHom_eq_zero_iff v _).mpr (.inr (by rwa [xCoord_some]))
 
 /-- **Reduction is onto at good reduction** when the valuation ring is Henselian, for instance
 complete: every point of the reduced elliptic curve is the reduction of a point of `W(F)`. -/
 theorem reductionHom_surjective [HenselianLocalRing v.valuationSubring] :
     Function.Surjective (reductionHom v (W := W)) := fun Q ↦ by
-  obtain ⟨P, rfl⟩ := nonsingularReductionHom_surjective v (W := W) Q
-  exact ⟨P, reductionHom_apply v _⟩
+  obtain ⟨P, rfl⟩ := W.nonsingularReductionHom_surjective v Q
+  exact ⟨P, reductionHom_apply v _ P.2⟩
 
 end WeierstrassCurve.Affine.Point
 
