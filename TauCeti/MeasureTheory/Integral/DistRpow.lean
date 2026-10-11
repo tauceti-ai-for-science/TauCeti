@@ -14,12 +14,13 @@ import Mathlib.Analysis.SpecificLimits.Basic
 # The tail integral of a negative power of the distance
 
 In a pseudometric measure space whose closed balls satisfy the growth bound
-`μ (closedBall y r) ≤ A rⁿ`, the function `x ↦ dist x y ^ (-s)` is integrable away from `y` as
-soon as `s > n`:
+`μ (closedBall y r) ≤ A rⁿ` (with `A : ℝ≥0∞`), the tail integral of `x ↦ dist x y ^ (-s)` obeys,
+for `0 ≤ s`, `n < s` and `R > 0`, the extended-valued bound
 
 `∫_{dist x y > R} dist x y ^ (-s) dx ≤ A 2ⁿ R ^ (n - s) / (1 - 2 ^ (n - s))`
 
-(`TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`). The exponent `n` need not be an integer.
+(`TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`). When `A < ∞` the right-hand side is finite, so
+`dist x y ^ (-s)` is integrable on `{x | R < dist x y}`. The exponent `n` need not be an integer.
 
 The proof splits the region `dist x y > R` into the dyadic annuli `2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`.
 On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`, and the annulus lies in a
