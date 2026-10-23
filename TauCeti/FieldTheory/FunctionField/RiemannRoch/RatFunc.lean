@@ -54,9 +54,10 @@ classification.
   `ℓ(D) = (deg D + 1)⁺` for **every** divisor of `k(x)`, not only the multiples of `P_∞`.
 * `TauCeti.Divisor.degreeZeroClassGroupEquivPolynomial`: `Cl⁰(k(x)) ≃+ ClassGroup k[X]`, the
   affine class-group bridge at the model `k[X]`, whose only place at infinity is the rational
-  place `P_∞`; hence `TauCeti.Divisor.ker_degreeClass_ratFunc_eq_bot` and
-  `TauCeti.Divisor.classNumber_ratFunc`, **the rational function field has class number one**
-  (Stichtenoth, Example 5.1).
+  place `P_∞`.
+* `TauCeti.Divisor.ker_degreeClass_ratFunc_eq_bot` and `TauCeti.Divisor.classNumber_ratFunc`:
+  as `k(x)` has genus zero, `Cl⁰(k(x))` is trivial, and **the rational function field has class
+  number one** (Stichtenoth, Example 5.1).
 
 ## Provenance
 
@@ -269,22 +270,14 @@ theorem Divisor.degreeZeroClassGroupEquivPolynomial_apply
       Divisor.classGroupHom k[X] (IsFunctionField.ratFunc k) c :=
   Divisor.degreeZeroClassGroupEquiv_apply k[X] (IsFunctionField.ratFunc k) _ _ c
 
-/-- **Every degree-zero divisor class of the rational function field is trivial**: through the
-affine bridge it is an ideal class of `k[X]`, and `k[X]` is a principal ideal domain.  The
-description of the divisor classes of `k(x)` in
-`TauCeti.Divisor.linearlyEquivalent_zsmul_ofPoint_infty` gives the same conclusion directly. -/
+/-- **Every degree-zero divisor class of the rational function field is trivial**, since `k(x)` has
+genus zero (`TauCeti.Divisor.ker_degreeClass_eq_bot_of_genus_eq_zero`).  Through the affine bridge
+`TauCeti.Divisor.degreeZeroClassGroupEquivPolynomial` this is also the statement that the
+principal ideal domain `k[X]` has trivial ideal class group. -/
 @[simp]
 theorem Divisor.ker_degreeClass_ratFunc_eq_bot :
     (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker = ⊥ :=
-  -- Neither `Subsingleton (ClassGroup k[X])` nor its `Additive` copy is found by instance
-  -- search unaided, so both are installed as local instances here.
-  have : Subsingleton (ClassGroup k[X]) :=
-    Fintype.card_le_one_iff_subsingleton.mp (card_classGroup_eq_one (R := k[X])).le
-  have : Subsingleton (Additive (ClassGroup k[X])) :=
-    inferInstanceAs (Subsingleton (ClassGroup k[X]))
-  have : Subsingleton (Divisor.degreeClass (IsFunctionField.ratFunc k)).ker :=
-    (Divisor.degreeZeroClassGroupEquivPolynomial k).toEquiv.subsingleton
-  AddSubgroup.eq_bot_of_subsingleton _
+  Divisor.ker_degreeClass_eq_bot_of_genus_eq_zero _ (genus_ratFunc k)
 
 /-- **The rational function field has class number one** (Stichtenoth, Example 5.1). -/
 @[simp]

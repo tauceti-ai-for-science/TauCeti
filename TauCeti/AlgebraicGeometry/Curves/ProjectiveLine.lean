@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.AlgHom
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.FiniteMap
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
+public import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # The projective line is the two-chart model of `k(X)`
@@ -39,6 +40,10 @@ morphism over `k` whose pullback of rational functions is the inclusion `k(X) �
 * `TauCeti.AlgebraicGeometry.projectiveLine.isCurveOver`: `ℙ¹_k` is a curve over `k`. Its local
   rings are regular (`TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`), so those
   at codimension-one points are discrete valuation rings.
+* `TauCeti.AlgebraicGeometry.projectiveLine.isIntegrallyClosedIn_functionField`: `k` is integrally
+  closed in the function field of `ℙ¹_k`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.exists_residueDegree_eq_one`: `ℙ¹_k` has a
+  codimension-one point of residue degree one, the image of a `k`-rational point.
 * `projectiveLine.functionFieldEquiv_functionFieldMap_isoTwoChartModel_hom` and
   `projectiveLine.functionFieldEquiv_functionFieldMap_isoTwoChartModel_inv`, in the namespace
   `TauCeti.AlgebraicGeometry`: the pullbacks of rational functions along the isomorphism with the
@@ -75,6 +80,33 @@ instance isCurveOver : (projectiveLine k).IsCurveOver k where
     rw [topologicalKrullDim_eq_toNat_trdeg_functionField k, (functionFieldEquiv k).trdeg_eq,
       (IsFunctionField.ratFunc k).trdeg_eq_one]
     simp
+
+/-- Every point of the projective line over a field has codimension at most one. -/
+instance fact_coheight_le_one : Fact (∀ y : projectiveLine k, Order.coheight y ≤ 1) :=
+  ⟨fun y ↦ Scheme.IsCurveOver.coheight_le_one (k := k) y⟩
+
+/-- `k` is integrally closed in the function field `k(t)` of the projective line. -/
+theorem isIntegrallyClosedIn_functionField :
+    IsIntegrallyClosedIn k (projectiveLine k).functionField :=
+  (functionFieldEquiv k).isIntegrallyClosedIn.mpr inferInstance
+
+/-- The origin `[1 : 0]` of the chart `D₊(X₀) = Spec k[X]`, as a `k`-rational point. -/
+private noncomputable def origin : Spec (.of k) ⟶ projectiveLine k :=
+  Spec.map (CommRingCat.ofHom ((Polynomial.aeval (0 : k)).comp
+    (awayEquivPolynomial k 0).toAlgHom).toRingHom) ≫ awayι k 0
+
+/-- The origin is a section of the structure morphism of the projective line. -/
+private lemma origin_comp_over : origin k ≫ (projectiveLine k ↘ Spec (.of k)) = 𝟙 _ := by
+  rw [origin, Category.assoc, awayι_over, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+    AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap, Algebra.algebraMap_self,
+    CommRingCat.ofHom_id, Spec.map_id]
+
+/-- The projective line over a field has a codimension-one point of residue degree one. -/
+theorem exists_residueDegree_eq_one : ∃ x₀ : CodimensionOnePoint (projectiveLine k),
+    (projectiveLine k ↘ Spec (.of k)).residueDegree x₀ = 1 :=
+  ⟨⟨origin k (IsLocalRing.closedPoint k),
+    Scheme.IsCurveOver.coheight_section_eq_one k (origin_comp_over k)⟩,
+    residueDegree_eq_one_of_section (origin_comp_over k) _⟩
 
 /-! ### The projective line is the two-chart model of `k(X)` -/
 

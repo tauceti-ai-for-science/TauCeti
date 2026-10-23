@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.RationalPoint.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.GenusZero
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 import TauCeti.FieldTheory.RatFunc.Automorphism
@@ -36,10 +38,17 @@ Genus zero alone does not suffice: the function field of a conic without rationa
 zero but no divisor of degree one
 (`TauCeti.not_exists_divisor_degree_eq_one_of_sq_add_sq_add_one_eq_zero`).
 
+The projective line itself has genus zero (`TauCeti.AlgebraicGeometry.projectiveLine.genus_eq_zero`)
+and a `k`-rational point, so the description of the Picard group of a curve of genus zero
+(`TauCeti.AlgebraicGeometry.SchemeWeilDivisor.picAddEquivIntOfGenusEqZero`) applies to it:
+`Pic⁰ ℙ¹_k` is trivial and the degree identifies `Pic ℙ¹_k` with `ℤ`, the class of a `k`-rational
+point being a generator, the class of `𝒪(1)`, rather than the trivial class.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.isoProjectiveLine`: the isomorphism `X ≅ ℙ¹_k` over `k` induced by a
   `k`-isomorphism `k(t) ≃ k(X)`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.picAddEquivInt`: the degree `Pic ℙ¹_k ≅ ℤ`.
 
 ## Main results
 
@@ -51,13 +60,16 @@ zero but no divisor of degree one
   such a curve is isomorphic to `ℙ¹_k` over `k`.
 * `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_section`: in particular,
   a regular proper curve of genus zero with a `k`-rational point is isomorphic to `ℙ¹_k`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.picZero_eq_bot`: `Pic⁰ ℙ¹_k` is trivial.
+* `TauCeti.AlgebraicGeometry.projectiveLine.picAddEquivInt_toLineBundleClass_ofPoint`: the class
+  of a `k`-rational point of `ℙ¹_k` goes to `1` under `Pic ℙ¹_k ≅ ℤ`.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 1.6.3 and Remark 1.6.4.
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Corollary I.6.12 and
-  Example IV.1.3.5.
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Corollary I.6.12,
+  Example II.6.10.1 and Example IV.1.3.5.
 -/
 
 public section
@@ -159,3 +171,47 @@ theorem exists_iso_projectiveLine_of_genus_eq_zero_of_section
       (x₀ := ⟨_, IsCurveOver.coheight_section_eq_one k hs⟩) rfl)
 
 end AlgebraicGeometry.Scheme
+
+/-! ### The Picard group of the projective line -/
+
+open AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry.projectiveLine
+
+universe u
+
+variable (k : Type u) [Field k]
+
+/-- **`Pic⁰ ℙ¹_k` is trivial**: every line bundle of degree zero on the projective line over a field
+is trivial. -/
+theorem picZero_eq_bot : LineBundleClass.picZero k (projectiveLine k) = ⊥ :=
+  SchemeWeilDivisor.picZero_eq_bot_of_genus_eq_zero k (isIntegrallyClosedIn_functionField k)
+    (genus_eq_zero k)
+
+/-- **`Pic ℙ¹_k ≅ ℤ`**: the Euler-characteristic degree is an isomorphism from the Picard group of
+the projective line over a field onto `ℤ`. The class of a `k`-rational point goes to `1`
+(`picAddEquivInt_toLineBundleClass_ofPoint`): it is a generator, the class of `𝒪(1)`, and not
+the trivial class. -/
+noncomputable def picAddEquivInt : Additive (LineBundleClass (projectiveLine k)) ≃+ ℤ :=
+  SchemeWeilDivisor.picAddEquivIntOfGenusEqZero k (isIntegrallyClosedIn_functionField k)
+    (genus_eq_zero k) (exists_residueDegree_eq_one k).choose_spec
+
+/-- The isomorphism `Pic ℙ¹_k ≅ ℤ` sends the class of a line bundle to its degree. -/
+@[simp]
+lemma picAddEquivInt_apply (a : Additive (LineBundleClass (projectiveLine k))) :
+    picAddEquivInt k a = LineBundleClass.eulerDegree k a.toMul := by
+  rw [picAddEquivInt, SchemeWeilDivisor.picAddEquivIntOfGenusEqZero_apply]
+
+/-- **A rational point of `ℙ¹_k` generates its Picard group**: the isomorphism `Pic ℙ¹_k ≅ ℤ` sends
+the class of `𝒪(x₀)`, for `x₀` the image of a `k`-rational point, to `1`. -/
+theorem picAddEquivInt_toLineBundleClass_ofPoint {s : Spec (.of k) ⟶ projectiveLine k}
+    (hs : s ≫ (projectiveLine k ↘ Spec (.of k)) = 𝟙 _)
+    {x₀ : CodimensionOnePoint (projectiveLine k)}
+    (hx₀ : (x₀ : projectiveLine k) = s (IsLocalRing.closedPoint k)) :
+    picAddEquivInt k
+      (Additive.ofMul (SchemeWeilDivisor.toLineBundleClass Fact.out (WeilDivisor.ofPoint x₀))) =
+        1 := by
+  rw [picAddEquivInt_apply, toMul_ofMul]
+  exact eulerDegree_toLineBundleClass_ofPoint_of_section Fact.out hs hx₀
+
+end TauCeti.AlgebraicGeometry.projectiveLine

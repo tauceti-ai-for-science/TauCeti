@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 
 /-!
 # Riemann–Roch spaces of degree-zero divisors
@@ -19,6 +20,10 @@ principal, equivalently when its divisor class is zero.  In general this is equi
 These are the degree-zero statements of Stichtenoth, *Algebraic Function Fields and Codes*,
 second edition, Corollary 1.4.12(c).  They use the product formula through invariance of degree
 under linear equivalence.
+
+In genus zero, Riemann's inequality `ℓ(D) ≥ deg D + 1 - g` gives every degree-zero divisor a
+nonzero Riemann–Roch space, so every degree-zero divisor is principal and the degree-zero divisor
+class group `Cl⁰(F)` is trivial.  No exactness of the constant field is needed.
 
 ## Main results
 
@@ -35,6 +40,9 @@ under linear equivalence.
 * `TauCeti.Divisor.dim_eq_zero_or_finrank_algebraicClosure_of_degree_eq_zero`: in general the
   dimension is zero or the degree of the full constant field; over an exact constant field,
   `TauCeti.Divisor.dim_eq_zero_or_one_of_degree_eq_zero` gives the zero-or-one dichotomy.
+* `TauCeti.Divisor.exists_principal_eq_of_genus_eq_zero` and
+  `TauCeti.Divisor.ker_degreeClass_eq_bot_of_genus_eq_zero`: in genus zero every degree-zero
+  divisor is principal, and `Cl⁰(F)` is trivial.
 
 ## References
 
@@ -130,5 +138,27 @@ theorem Divisor.dim_eq_zero_or_one_of_degree_eq_zero
     Divisor.dim D = 0 ∨ Divisor.dim D = 1 := by
   rw [← isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex]
   exact Divisor.dim_eq_zero_or_finrank_algebraicClosure_of_degree_eq_zero hF hD
+
+/-! ### Genus zero -/
+
+/-- **In genus zero every divisor of degree zero is principal.**  Riemann's inequality gives
+`ℓ(D) ≥ deg D + 1 - g = 1`, and a degree-zero divisor with a nonzero Riemann–Roch space is
+principal. -/
+theorem Divisor.exists_principal_eq_of_genus_eq_zero (hF : IsFunctionField k F)
+    (hg : genus k F = 0) {D : Divisor k F} (hD : Divisor.degree D = 0) :
+    ∃ z : Fˣ, Divisor.principal hF z = D := by
+  refine (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hD).mp ?_
+  have h := Divisor.degree_add_one_sub_genus_le_dim hF D
+  rw [hD, hg] at h
+  omega
+
+/-- **A function field of genus zero has trivial degree-zero divisor class group** `Cl⁰(F)`. -/
+theorem Divisor.ker_degreeClass_eq_bot_of_genus_eq_zero (hF : IsFunctionField k F)
+    (hg : genus k F = 0) : (Divisor.degreeClass hF).ker = ⊥ := by
+  refine (AddSubgroup.eq_bot_iff_forall _).mpr fun c hc ↦ ?_
+  obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
+  rw [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass] at hc
+  exact (Divisor.divisorClass_eq_zero_iff hF).mpr
+    (Divisor.exists_principal_eq_of_genus_eq_zero hF hg hc)
 
 end TauCeti
