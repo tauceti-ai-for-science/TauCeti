@@ -43,8 +43,8 @@ one, that the Morse chart contains the ellipsoid `‖u‖² + 2‖v‖² ≤ 2ε
 function equal to `f - μ(‖u‖² + 2‖v‖²)` in the chart and to `f` elsewhere. Under those
 hypotheses the first three facts make the band `F⁻¹[c - ε, c + ε]` free of critical points, so
 that the gradient flow deformation retracts `{f ≤ c + ε}` onto `{F ≤ c - ε}`; the last one
-retracts `{F ≤ c - ε}` onto `{f ≤ c - ε}` with a `λ`-cell attached. None of these manifold-level
-consequences are proved in this file.
+retracts `{F ≤ c - ε}` onto `{f ≤ c - ε}` with a `λ`-cell attached. These manifold-level
+consequences are proved in `TauCeti.exists_sublevel_union_cells_deformation`, not in this file.
 
 ## Main declarations
 
