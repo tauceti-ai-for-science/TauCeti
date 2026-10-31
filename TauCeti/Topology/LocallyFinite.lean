@@ -16,9 +16,10 @@ A locally finite family of sets stays locally finite when it is reindexed along 
 projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
-finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). The topological
-support of a locally finite sum of functions lies in the union of their topological supports
-(`LocallyFinite.tsupport_finsum_subset`).
+finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). The image of a
+locally finite family under a proper map is locally finite (`LocallyFinite.image_of_isProperMap`).
+The topological support of a locally finite sum of functions lies in the union of their topological
+supports (`LocallyFinite.tsupport_finsum_subset`).
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -91,6 +92,23 @@ protected theorem iUnion [Finite κ] {f : κ → ι → Set X} (hf : ∀ k, Loca
   intro x
   filter_upwards [Filter.eventually_all.2 fun k ↦ hf k x] with t ht
   simpa only [iUnion_inter, nonempty_iUnion, ofPred_exists] using finite_iUnion ht
+
+/-- The image of a locally finite family under a proper map is locally finite. -/
+theorem image_of_isProperMap {Y : Type*} [TopologicalSpace Y] {g : X → Y} (hf : LocallyFinite f)
+    (hg : IsProperMap g) : LocallyFinite fun i ↦ g '' f i := by
+  intro y
+  -- First find an open neighbourhood `W` of the fibre over `y` meeting only finitely many members.
+  choose! U hU hUfin using hf
+  obtain ⟨t, -, hcover⟩ := (hg.isCompact_preimage isCompact_singleton).elim_nhds_subcover
+    (fun x ↦ interior (U x)) fun x _ ↦ interior_mem_nhds.2 (hU x)
+  set W := ⋃ x ∈ t, interior (U x)
+  have hW : IsOpen W := isOpen_biUnion fun _ _ ↦ isOpen_interior
+  -- Since `g` is closed, the points whose fibre lies in `W` form a neighbourhood of `y`.
+  refine ⟨(g '' Wᶜ)ᶜ, (hg.isClosedMap _ hW.isClosed_compl).isOpen_compl.mem_nhds
+    fun ⟨x, hx, hxy⟩ ↦ hx (hcover hxy), ((t.finite_toSet.biUnion fun x _ ↦ hUfin x).subset ?_)⟩
+  rintro i ⟨_, ⟨x, hx, rfl⟩, hxW⟩
+  obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 (not_not.1 fun h ↦ hxW ⟨x, h, rfl⟩)
+  exact mem_iUnion₂.2 ⟨z, hz, x, hx, interior_subset hxz⟩
 
 /-- The topological multiplicative support of a product of functions with locally finite
 multiplicative supports lies in the union of their topological multiplicative supports. -/

@@ -559,6 +559,44 @@ lemma twistedChainComplex_ext_coeff {y y' : (twistedChainComplex L).X k}
   simpa only [twistedChainComplexCoeff_eq_component, ModuleCat.hom_comp, LinearMap.comp_apply,
     ModuleCat.hom_ofHom] using h ρ
 
+/-- A twisted chain has only finitely many nonzero coefficients. -/
+lemma finite_setOf_twistedChainComplexCoeff_ne_zero (y : (twistedChainComplex L).X k) :
+    {ρ | (twistedChainComplexCoeff L ρ).hom y ≠ 0}.Finite := by
+  classical
+  refine (DFinsupp.support ((eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum
+    (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ))).hom.hom y)).finite_toSet.subset
+    fun ρ (hρ : (twistedChainComplexCoeff L ρ).hom y ≠ 0) ↦ ?_
+  rw [Finset.mem_coe, DFinsupp.mem_support_iff, DirectSum.apply_eq_component (R := R)]
+  simpa only [twistedChainComplexCoeff_eq_component, ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.hom_ofHom] using hρ
+
+/-- A twisted chain is the sum of its coefficients placed on their simplices, over any finite set
+of simplices containing all those with nonzero coefficient. -/
+lemma sum_ιTwistedChainComplex_twistedChainComplexCoeff (y : (twistedChainComplex L).X k)
+    {s : Finset ((TopCat.toSSet.obj X) _⦋k⦌)}
+    (hs : ∀ ρ, (twistedChainComplexCoeff L ρ).hom y ≠ 0 → ρ ∈ s) :
+    ∑ ρ ∈ s, (ιTwistedChainComplex L k ρ).hom ((twistedChainComplexCoeff L ρ).hom y) = y := by
+  refine twistedChainComplex_ext_coeff L fun τ ↦ ?_
+  rw [map_sum]
+  by_cases hτ : τ ∈ s
+  · rw [Finset.sum_eq_single_of_mem τ hτ fun ρ _ h ↦
+      twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L h _,
+      twistedChainComplexCoeff_ιTwistedChainComplex_apply]
+  · rw [Finset.sum_eq_zero fun ρ hρ ↦ twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L
+      (fun (h : ρ = τ) ↦ hτ (h ▸ hρ)) _]
+    exact (not_not.1 fun h ↦ hτ (hs τ h)).symm
+
+/-- Summing an additive map over the coefficients of a twisted chain, each placed on its simplex,
+recovers the value of the map on the chain. -/
+lemma finsum_ιTwistedChainComplex_twistedChainComplexCoeff {M : Type*} [AddCommMonoid M]
+    (g : (twistedChainComplex L).X k →+ M) (y : (twistedChainComplex L).X k) :
+    ∑ᶠ ρ, g ((ιTwistedChainComplex L k ρ).hom ((twistedChainComplexCoeff L ρ).hom y)) = g y := by
+  have hfin := finite_setOf_twistedChainComplexCoeff_ne_zero L y
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) fun ρ hρ ↦
+      (Set.Finite.mem_toFinset _).2 fun h ↦ hρ (by simp [h]),
+    ← map_sum, sum_ιTwistedChainComplex_twistedChainComplexCoeff L y fun ρ hρ ↦
+      (Set.Finite.mem_toFinset _).2 hρ]
+
 /-- The twisted boundary of a chain supported on `σ` is a signed sum of chains supported on the
 faces of `σ`. -/
 lemma d_ιTwistedChainComplex_apply (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌)
