@@ -42,7 +42,6 @@ flux of a field whose divergence vanishes in the interior is zero.
 
 * `TauCeti.boxBoundarySum a b F`: the signed sum of the face integrals of the fields `F i` over
   the box `[a, b]`, front faces minus back faces.
-* `TauCeti.integral_divergence_eq_boxBoundarySum`: the divergence theorem on a box in this form.
 * `TauCeti.affinePiolaTransform L p F`: the Piola transform of `F` along `u ↦ p + L u`.
 * `TauCeti.affinePiolaTransform_eq_det_smul`: for invertible `L` it is `det L • L⁻¹ (F ∘ A)`.
 * `TauCeti.sum_fderiv_affinePiolaTransform`: Piola's identity for the divergence.
@@ -86,19 +85,6 @@ theorem boxBoundarySum_def (a b : Fin (n + 1) → ℝ) (F : Fin (n + 1) → (Fin
       ((∫ x in Icc (a ∘ i.succAbove) (b ∘ i.succAbove), F i (i.insertNth (b i) x)) -
         ∫ x in Icc (a ∘ i.succAbove) (b ∘ i.succAbove), F i (i.insertNth (a i) x)) :=
   (rfl)
-
-/-- **Divergence theorem** on a box, with boundary term `TauCeti.boxBoundarySum`: if each `F i`
-is continuous on `[a, b]` and has derivative `F' i x` at every point of the open box off a
-countable set, and the divergence `∑ i, F' i x (Pi.single i 1)` is integrable on `[a, b]`, then
-its integral is the boundary sum. -/
-theorem integral_divergence_eq_boxBoundarySum {a b : Fin (n + 1) → ℝ} (hle : a ≤ b)
-    {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
-    {F' : Fin (n + 1) → (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] E}
-    {s : Set (Fin (n + 1) → ℝ)} (hs : s.Countable) (hc : ∀ i, ContinuousOn (F i) (Icc a b))
-    (hd : ∀ x ∈ (univ.pi fun i ↦ Ioo (a i) (b i)) \ s, ∀ i, HasFDerivAt (F i) (F' i x) x)
-    (hi : IntegrableOn (fun x ↦ ∑ i, F' i x (Pi.single i 1)) (Icc a b)) :
-    ∫ x in Icc a b, ∑ i, F' i x (Pi.single i 1) = boxBoundarySum a b F :=
-  integral_divergence_of_hasFDerivAt_off_countable' a b hle F F' s hs hc hd hi
 
 /-! ### The affine Piola transform -/
 
@@ -247,8 +233,9 @@ theorem det_smul_integral_divergence_eq_affineFluxBoundary
   have hi' : IntegrableOn (fun u ↦ ∑ j, H' j u (Pi.single j 1)) (Icc 0 1) := by
     simp only [hdiv]
     exact hi.smul L.det
-  rw [affineFluxBoundary_def, ← integral_divergence_eq_boxBoundarySum (F' := H') zero_le_one hs
-    hcont (fun u hu j ↦ hasFDerivAt_affinePiolaTransform (hd u hu) j) hi']
+  rw [affineFluxBoundary_def, boxBoundarySum_def,
+    ← integral_divergence_of_hasFDerivAt_off_countable' 0 1 zero_le_one _ H' s hs hcont
+      (fun u hu j ↦ hasFDerivAt_affinePiolaTransform (hd u hu) j) hi']
   simp only [hdiv, integral_smul]
 
 /-- A family of fields whose divergence vanishes in the interior of the parallelepiped
