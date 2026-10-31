@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
@@ -259,12 +260,8 @@ include he h₀ h₂ in
 `ιMulti_sub_ιMulti_add_hodgeStar` with `a = ξ = v`. -/
 theorem ιMulti_apply_add_hodgeStar (v : V) :
     ιMulti ℝ 2 ![v, J v] + o.hodgeStar hkl (ιMulti ℝ 2 ![v, J v]) = ‖v‖ ^ 2 • J.kahlerForm := by
-  have hswap : ιMulti ℝ 2 ![J v, v] = -ιMulti ℝ 2 ![v, J v] :=
-    ext_inner_ιMulti_two fun u w ↦ by
-      simp only [inner_neg_left, inner_ιMulti_two]
-      ring
   have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he v v
-  rw [hswap, sub_neg_eq_add, map_add, real_inner_self_eq_norm_sq] at h
+  rw [ιMulti_two_swap v (J v), sub_neg_eq_add, map_add, real_inner_self_eq_norm_sq] at h
   linear_combination (norm := module) (2⁻¹ : ℝ) • h
 
 end Frame

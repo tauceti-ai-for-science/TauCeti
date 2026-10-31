@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
 public import Mathlib.Order.Bounds.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.UnitaryFrame
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
@@ -121,12 +122,8 @@ omit [Fact (finrank ℝ V = 4)] in
 private theorem transpose_frameMatrix (F : ⋀[ℝ]^2 V) :
     (frameMatrix e F)ᵀ = -frameMatrix e F := by
   ext i j
-  have hswap : ιMulti ℝ 2 ![e j, e i] = -ιMulti ℝ 2 ![e i, e j] :=
-    ext_inner_ιMulti_two fun u w ↦ by
-      simp only [inner_neg_left, inner_ιMulti_two]
-      ring
-  simp only [frameMatrix, transpose_apply, of_apply, Matrix.neg_apply, hswap,
-    inner_neg_right]
+  simp only [frameMatrix, transpose_apply, of_apply, Matrix.neg_apply,
+    ιMulti_two_swap (e i) (e j), inner_neg_right]
 
 omit [FiniteDimensional ℝ V] [Fact (finrank ℝ V = 4)] in
 /-- `‖∑ᵢ cᵢ eᵢ‖² = c ⬝ c`. -/
@@ -186,8 +183,9 @@ private theorem frameMatrix_eigenvalue_eq (F : ⋀[ℝ]^2 V) :
     rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow,
       Real.sq_sqrt (Matrix.frameInner_self_nonneg _),
       Matrix.frameInner_frameAntiSelfDualPart_self hF, o.norm_sub_hodgeStar_sq_eq_sum hkl he]
-    simp only [Fin.sum_univ_three, OrthonormalBasis.antiSelfDualFrame, cons_val_zero,
-      cons_val_one, cons_val_two, head_cons, tail_cons, real_inner_comm F,
+    simp only [Fin.sum_univ_three, OrthonormalBasis.antiSelfDualFrame_zero,
+      OrthonormalBasis.antiSelfDualFrame_one, OrthonormalBasis.antiSelfDualFrame_two,
+      real_inner_comm F,
       inner_sub_right, inner_add_right, frameMatrix, of_apply]
     ring
   rw [hω, hn]

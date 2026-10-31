@@ -32,6 +32,7 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
   `i < j` to `b i ∧ b j`.
 * `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
   `u ∧ w` of two vectors is linear in `w`.
+* `exteriorPower.ιMulti_two_swap`: the wedge of two vectors is antisymmetric, `w ∧ u = -(u ∧ w)`.
 -/
 
 public section
@@ -51,6 +52,13 @@ theorem ιMulti_two_smul_right (u w : M) (c : R) :
     ιMulti R 2 ![u, c • w] = c • ιMulti R 2 ![u, w] := by
   apply Subtype.ext
   simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- The wedge of two vectors is antisymmetric: `w ∧ u = -(u ∧ w)`. -/
+theorem ιMulti_two_swap (u w : M) : ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
+  have h : ![w, u] = ![u, w] ∘ Equiv.swap 0 1 := by
+    ext i
+    fin_cases i <;> rfl
+  rw [h, (ιMulti R 2).map_swap _ (by decide)]
 
 end exteriorPower
 

@@ -31,8 +31,9 @@ volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
 `D_A (u ∧ w) = A u ∧ w + u ∧ A w` of a skew-adjoint endomorphism `A` commutes with the Hodge star
 on two-forms (`Orientation.hodgeStar_lieMap_two`). For a positively oriented orthonormal basis
 `e`, the two-vectors `e₀ ∧ e₁ - e₂ ∧ e₃`, `e₀ ∧ e₂ + e₁ ∧ e₃`, `e₀ ∧ e₃ - e₁ ∧ e₂`
-(`OrthonormalBasis.antiSelfDualFrame`) are orthogonal of squared norm `2`, and
-`x - ⋆x = ∑ₖ ⟪φₖ, x⟫ φₖ` (`Orientation.sub_hodgeStar_eq_sum_antiSelfDualFrame`).
+(`OrthonormalBasis.antiSelfDualFrame`) are orthogonal of squared norm `2` and anti-self-dual
+(`Orientation.hodgeStar_antiSelfDualFrame`), and `x - ⋆x = ∑ₖ ⟪φₖ, x⟫ φₖ`
+(`Orientation.sub_hodgeStar_eq_sum_antiSelfDualFrame`).
 
 ## References
 
@@ -196,19 +197,39 @@ namespace OrthonormalBasis
 /-- The anti-self-dual frame `e₀ ∧ e₁ - e₂ ∧ e₃`, `e₀ ∧ e₂ + e₁ ∧ e₃`, `e₀ ∧ e₃ - e₁ ∧ e₂` of an
 orthonormal basis `e` of a four-dimensional space. For the orientation of `e` it is an orthogonal
 basis of the anti-self-dual two-vectors (`Orientation.sub_hodgeStar_eq_sum_antiSelfDualFrame`). -/
-@[expose] def antiSelfDualFrame (e : OrthonormalBasis (Fin 4) ℝ V) : Fin 3 → ⋀[ℝ]^2 V :=
+def antiSelfDualFrame (e : OrthonormalBasis (Fin 4) ℝ V) : Fin 3 → ⋀[ℝ]^2 V :=
   ![ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3],
     ιMulti ℝ 2 ![e 0, e 2] + ιMulti ℝ 2 ![e 1, e 3],
     ιMulti ℝ 2 ![e 0, e 3] - ιMulti ℝ 2 ![e 1, e 2]]
+
+omit [FiniteDimensional ℝ V] in
+/-- `φ₀ = e₀ ∧ e₁ - e₂ ∧ e₃`. -/
+@[simp]
+theorem antiSelfDualFrame_zero (e : OrthonormalBasis (Fin 4) ℝ V) :
+    e.antiSelfDualFrame 0 = ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3] := by
+  simp only [antiSelfDualFrame, Matrix.cons_val_zero]
+
+omit [FiniteDimensional ℝ V] in
+/-- `φ₁ = e₀ ∧ e₂ + e₁ ∧ e₃`. -/
+@[simp]
+theorem antiSelfDualFrame_one (e : OrthonormalBasis (Fin 4) ℝ V) :
+    e.antiSelfDualFrame 1 = ιMulti ℝ 2 ![e 0, e 2] + ιMulti ℝ 2 ![e 1, e 3] := by
+  simp only [antiSelfDualFrame, Matrix.cons_val_one, Matrix.cons_val_zero]
+
+omit [FiniteDimensional ℝ V] in
+/-- `φ₂ = e₀ ∧ e₃ - e₁ ∧ e₂`. -/
+@[simp]
+theorem antiSelfDualFrame_two (e : OrthonormalBasis (Fin 4) ℝ V) :
+    e.antiSelfDualFrame 2 = ιMulti ℝ 2 ![e 0, e 3] - ιMulti ℝ 2 ![e 1, e 2] := by
+  simp only [antiSelfDualFrame, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
 
 /-- The anti-self-dual frame is orthogonal, with `‖φₖ‖² = 2`. -/
 theorem inner_antiSelfDualFrame (e : OrthonormalBasis (Fin 4) ℝ V) (k l : Fin 3) :
     ⟪e.antiSelfDualFrame k, e.antiSelfDualFrame l⟫ = if k = l then 2 else 0 := by
   fin_cases k <;> fin_cases l <;>
-    simp only [antiSelfDualFrame, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-      Matrix.tail_cons, inner_add_left, inner_add_right, inner_sub_left, inner_sub_right,
-      inner_ιMulti_two, OrthonormalBasis.inner_eq_ite] <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, antiSelfDualFrame_zero,
+      antiSelfDualFrame_one, antiSelfDualFrame_two, inner_add_left, inner_add_right,
+      inner_sub_left, inner_sub_right, inner_ιMulti_two, OrthonormalBasis.inner_eq_ite] <;>
     norm_num
 
 end OrthonormalBasis
@@ -285,7 +306,8 @@ theorem sub_hodgeStar_eq_sum_antiSelfDualFrame (hkl : 2 + 2 = finrank ℝ V)
     refine linearMap_ext_inner_ιMulti_two fun a b u w ↦ ?_
     simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
       LinearMap.add_apply, LinearMap.smulRight_apply, innerₗ_apply_apply,
-      real_inner_smul_left, Fin.sum_univ_three, OrthonormalBasis.antiSelfDualFrame,
+      real_inner_smul_left, Fin.sum_univ_three, OrthonormalBasis.antiSelfDualFrame_zero,
+      OrthonormalBasis.antiSelfDualFrame_one, OrthonormalBasis.antiSelfDualFrame_two,
       Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
       Matrix.head_cons, Matrix.tail_cons, inner_sub_left, inner_add_left,
       o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two, o.volumeForm_robust e he,
@@ -296,6 +318,16 @@ theorem sub_hodgeStar_eq_sum_antiSelfDualFrame (hkl : 2 + 2 = finrank ℝ V)
     simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
     ring
   simpa using LinearMap.congr_fun key x
+
+/-- **The anti-self-dual frame is anti-self-dual**: `⋆φₖ = -φₖ` for the anti-self-dual frame `φ`
+of a positively oriented orthonormal basis. -/
+theorem hodgeStar_antiSelfDualFrame (hkl : 2 + 2 = finrank ℝ V)
+    (he : e.toBasis.orientation = o) (k : Fin 3) :
+    o.hodgeStar hkl (e.antiSelfDualFrame k) = -e.antiSelfDualFrame k := by
+  have h := o.sub_hodgeStar_eq_sum_antiSelfDualFrame hkl he (e.antiSelfDualFrame k)
+  simp only [e.inner_antiSelfDualFrame, ite_smul, zero_smul, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true] at h
+  linear_combination (norm := module) -h
 
 /-- `‖x - ⋆x‖² = 2 ∑ₖ ⟪φₖ, x⟫²` for the anti-self-dual frame `φ` of a positively oriented
 orthonormal basis. -/
