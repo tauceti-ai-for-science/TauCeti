@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Conjugation
-import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 
 /-!
 # The identity component of a centralizer
@@ -63,9 +62,7 @@ theorem ringKrullDim_quotient_identityComponent_centralizerHopfIdeal [CharZero k
     ringKrullDim (H ⧸ (centralizerHopfIdeal H x).identityComponent.toIdeal) =
       Module.finrank k
         (LinearMap.ker (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x)) := by
-  let _ : Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H (centralizerHopfIdeal H x)) :=
-    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k _)
-  rw [HopfIdeal.ringKrullDim_quotient_identityComponent_of_smooth,
+  rw [HopfIdeal.ringKrullDim_quotient_identityComponent,
     ringKrullDim_quotient_centralizerHopfIdeal]
 
 /-- **Conjugation of identity components of centralizers.** For a rational point `g`,

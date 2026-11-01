@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Characteristic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
+import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.RationalPoint
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
+import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -21,12 +22,12 @@ For a closed subgroup `N` of an affine group `G`, `HopfIdeal.identityComponent` 
 `N°` as a closed subgroup of `G`. Its quotient coordinate algebra is canonically isomorphic
 to the coordinate algebra obtained by taking the identity component inside `N`.
 
-The identity component has the same tangent Lie algebra as `N`, and when `N` is smooth also the
-same dimension. Conjugating `N` by a rational point `g` conjugates `N°`:
-`(gNg⁻¹)° = gN°g⁻¹`, an equality of closed subgroup schemes. When `G` and `N` are reduced,
-normality of `N` implies normality of `N°` in `G`: the identity component is characteristic
-in `N`, and normality can be tested on rational points. All statements are over an
-algebraically closed field; no connectedness of the ambient group is required.
+The identity component has the same tangent Lie algebra and the same dimension as `N`.
+Conjugating `N` by a rational point `g` conjugates `N°`: `(gNg⁻¹)° = gN°g⁻¹`, an equality
+of closed subgroup schemes. When `G` and `N` are reduced, normality of `N` implies normality of
+`N°` in `G`: the identity component is characteristic in `N`, and normality can be tested on
+rational points. All statements are over an algebraically closed field; no connectedness of the
+ambient group is required.
 
 ## References
 
@@ -168,13 +169,42 @@ theorem lieSubalgebra_identityComponent (I : HopfIdeal k H) :
     rw [lieSubalgebra_identityComponentHopfIdeal_eq_top]
     exact LieSubalgebra.mem_top _
 
-/-- A smooth closed subgroup and its identity component have the same dimension. -/
-theorem ringKrullDim_quotient_identityComponent_of_smooth (I : HopfIdeal k H)
-    [Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H I)] :
-    ringKrullDim (H ⧸ I.identityComponent.toIdeal) = ringKrullDim (H ⧸ I.toIdeal) := by
-  let _ := I.smooth_identityComponent
-  rw [ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth,
-    ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth, lieSubalgebra_identityComponent]
+/-- A finite-type affine group and its identity component have the same dimension: every prime
+contained in the augmentation ideal lies on the identity component, so the augmentation ideal has
+the same height in both coordinate rings. -/
+private theorem ringKrullDim_quotient_identityComponentHopfIdeal
+    (K : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    ringKrullDim (K ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := K)).toIdeal) =
+      ringKrullDim K := by
+  let _ : IsNoetherianRing K := Algebra.FiniteType.isNoetherianRing k K
+  refine le_antisymm (ringKrullDim_quotient_le _) ?_
+  let z : PrimeSpectrum K := Bialgebra.augmentationPoint k K
+  have hmem : z ∈ connectedComponent z := mem_connectedComponent
+  rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal, ringKrullDim_quotient]
+  change ringKrullDim K ≤
+    Order.krullDim (PrimeSpectrum.zeroLocus (PrimeSpectrum.connectedComponentIdeal z : Set K))
+  rw [PrimeSpectrum.zeroLocus_connectedComponentIdeal,
+    HopfAlgebra.ringKrullDim_eq_height_augmentation (k := k),
+    show Bialgebra.AugmentationIdeal k K = z.asIdeal from (AlgHom.kernelPoint_asIdeal _).symm,
+    PrimeSpectrum.height_eq_orderHeight]
+  have hle (a : connectedComponent z) (b : PrimeSpectrum K) (hb : b ≤ a) :
+      b ∈ connectedComponent z := by
+    rw [connectedComponent_eq a.2]
+    exact isPreconnected_singleton.closure.subset_connectedComponent
+      (specializes_iff_mem_closure.mp ((PrimeSpectrum.le_iff_specializes _ _).mp hb))
+      (subset_closure rfl)
+  have hh : Order.height (⟨z, hmem⟩ : connectedComponent z) = Order.height z :=
+    Order.height_eq_of_strictMono Subtype.val (Subtype.strictMono_coe _)
+      (fun a b hb ↦ ⟨⟨b, hle a b hb.le⟩, hb, rfl⟩) _
+  rw [← hh]
+  exact Order.height_le_krullDim _
+
+/-- A closed subgroup and its identity component have the same dimension. -/
+theorem ringKrullDim_quotient_identityComponent (I : HopfIdeal k H) :
+    ringKrullDim (H ⧸ I.identityComponent.toIdeal) = ringKrullDim (H ⧸ I.toIdeal) :=
+  (ringKrullDim_eq_of_ringEquiv
+    (CommHopfAlgCat.ofIso I.identityComponentQuotientIso).toAlgEquiv.toRingEquiv).trans
+      (ringKrullDim_quotient_identityComponentHopfIdeal _)
 
 /-- **Identity components of conjugate subgroups.** Conjugating a closed subgroup `N` by a
 rational point `g` conjugates its identity component: `(gNg⁻¹)° = gN°g⁻¹`. -/
@@ -182,11 +212,15 @@ rational point `g` conjugates its identity component: `(gNg⁻¹)° = gN°g⁻¹
 theorem identityComponent_conjugate (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
     (I.conjugate g).identityComponent = I.identityComponent.conjugate g := by
   ext x
-  rw [mem_identityComponent, mem_conjugate, mem_identityComponent,
-    ← HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff
-      (I.quotientConjugationEquiv (I.conjugate g) g rfl),
-    CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
-    Ideal.Quotient.mkₐ_eq_mk, quotientConjugationEquiv_mk]
+  -- The conjugation isomorphism of quotients sends the restriction of `x` to `gNg⁻¹` to the
+  -- restriction of the conjugated function to `N`.
+  have hx : I.quotientConjugationEquiv (I.conjugate g) g rfl
+      ((CommHopfAlgCat.mkQuotient H.obj (I.conjugate g)).hom x) =
+        (CommHopfAlgCat.mkQuotient H.obj I).hom (HopfAlgebra.pointConjugationAlgHom g x) :=
+    quotientConjugationEquiv_mk I _ g rfl x
+  rw [mem_identityComponent, mem_conjugate, mem_identityComponent, ← hx]
+  exact (HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff
+    (I.quotientConjugationEquiv (I.conjugate g) g rfl)).symm
 
 end
 
