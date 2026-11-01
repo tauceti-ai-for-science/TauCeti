@@ -49,6 +49,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.idealsPrimeTo`,
   `TauCeti.GlobalNumberFields.integralIdealsPrimeTo`: ideals prime to the finite part, with the
   inclusion `TauCeti.GlobalNumberFields.integralIdealsPrimeToInclusion` along divisibility.
+* `TauCeti.GlobalNumberFields.placePrimeTo`: the finite place of a prime ideal prime to the
+  finite part, which lies outside the support (`placePrimeTo_notMem_support`).
 
 ## Main results
 
@@ -574,5 +576,26 @@ noncomputable def integralIdealsPrimeToInclusion {𝔪 𝔫 : Modulus K} (h : �
     (I : integralIdealsPrimeTo 𝔫) :
     ((integralIdealsPrimeToInclusion h I : integralIdealsPrimeTo 𝔪) : Ideal (𝓞 K)) =
       (I : Ideal (𝓞 K)) := (rfl)
+
+/-- **The finite place of a prime ideal prime to a modulus**: a maximal ideal of `𝓞 K` prime to
+`𝔪` is nonzero, so it is a finite place of `K`, whose ideal is the prime itself
+(`asIdeal_placePrimeTo`). -/
+@[expose] def placePrimeTo {𝔪 : Modulus K} (I : integralIdealsPrimeTo 𝔪)
+    [(I : Ideal (𝓞 K)).IsMaximal] : HeightOneSpectrum (𝓞 K) :=
+  ⟨I, inferInstance,
+    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1⟩
+
+/-- The ideal of the finite place of a prime ideal prime to `𝔪` is the prime itself. -/
+@[simp]
+theorem asIdeal_placePrimeTo {𝔪 : Modulus K} (I : integralIdealsPrimeTo 𝔪)
+    [(I : Ideal (𝓞 K)).IsMaximal] :
+    (placePrimeTo I).asIdeal = I :=
+  rfl
+
+/-- The finite place of a prime ideal prime to `𝔪` lies outside the support of `𝔪`. -/
+theorem placePrimeTo_notMem_support {𝔪 : Modulus K} (I : integralIdealsPrimeTo 𝔪)
+    [(I : Ideal (𝓞 K)).IsMaximal] :
+    placePrimeTo I ∉ 𝔪.support := fun hv ↦
+  (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).2 _ hv dvd_rfl
 
 end TauCeti.GlobalNumberFields

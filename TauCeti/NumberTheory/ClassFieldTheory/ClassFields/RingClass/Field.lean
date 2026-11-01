@@ -189,8 +189,8 @@ conductor, which factors through the congruence description `Cl_𝔣 → Pic O` 
 the same kernel (`ringClassArtinEquiv_rayClassToPic`). -/
 def ringClassArtinEquiv : Pic O ≃* Gal(ringClassField O hK/K) :=
   (QuotientGroup.quotientKerEquivOfSurjective _ O.rayClassToPic_surjective).symm.trans <|
-    (QuotientGroup.quotientMulEquivOfEq (ker_rayClassArtinMap_ringClassField O hK).symm).trans
-      (QuotientGroup.quotientKerEquivOfSurjective _ (rayClassArtinMap_surjective _))
+    QuotientGroup.liftEquiv _ (rayClassArtinMap_surjective _)
+      (ker_rayClassArtinMap_ringClassField O hK).symm
 
 /-- **Ring-class reciprocity on ray classes**: the Artin symbol of the Picard class of a ray class
 of the conductor is its ray-class Artin symbol. -/

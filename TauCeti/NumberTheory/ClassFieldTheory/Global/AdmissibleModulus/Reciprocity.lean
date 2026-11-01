@@ -65,8 +65,6 @@ ray-class Artin symbol is trivial
 * `TauCeti.ClassFieldTheory.rayClassArtinMap_comp_rayClassMk`,
   `TauCeti.ClassFieldTheory.rayClassArtinMap_rayClassMk`: on the ideals prime to `𝔪` the
   ray-class Artin map is the ideal-theoretic Artin map.
-* `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramifiedAt_of_integralIdealsPrimeTo`:
-  `L/K` is unramified above every prime ideal prime to `𝔪`.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_rayClassArtinMap_idealClass`,
   `TauCeti.ClassFieldTheory.rayClassArtinMap_idealClass`: the splitting law.
 * `TauCeti.ClassFieldTheory.ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`:
@@ -169,28 +167,6 @@ theorem ker_rayClassArtinMap :
 
 /-! ### The splitting law -/
 
-/-- The finite place of `K` of a prime ideal prime to `𝔪`; its ideal is the prime itself. -/
-private def placePrimeTo (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal] :
-    HeightOneSpectrum (𝓞 K) :=
-  ⟨I, inferInstance,
-    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1⟩
-
-/-- The finite place of a prime ideal prime to `𝔪` lies outside the support of `𝔪`. -/
-private theorem placePrimeTo_notMem_support (I : integralIdealsPrimeTo 𝔪)
-    [(I : Ideal (𝓞 K)).IsMaximal] :
-    placePrimeTo I ∉ 𝔪.support := fun hv ↦
-  (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).2 _ hv dvd_rfl
-
-/-- **An admissible modulus bounds the ramification above the primes prime to it**: every prime
-of `L` above a prime ideal of `K` prime to `𝔪` is unramified over `K`. -/
-theorem IsAdmissibleModulus.isUnramifiedAt_of_integralIdealsPrimeTo
-    (h : IsAdmissibleModulus K L 𝔪) (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal]
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
-    Algebra.IsUnramifiedAt (𝓞 K) Q :=
-  -- `(placePrimeTo I).asIdeal` is `I` by definition, so the instance transfers.
-  have : Q.LiesOver (placePrimeTo I).asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
-  h.isUnramifiedAway _ (placePrimeTo_notMem_support I) Q
-
 /-- **On ideals, ray-class reciprocity is the ideal-theoretic Artin map**: the ray-class Artin
 symbol of the ray class of an invertible fractional ideal prime to `𝔪` is the value of
 `NumberFieldArithmetic.artinHomAway` at that ideal, for the excluded set `𝔪.support`, outside
@@ -217,8 +193,7 @@ prime to `𝔪` is an arithmetic Frobenius at every prime of `L` above `𝔭`. -
 theorem isArithFrobAt_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
     [(I : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) Q := by
-  -- `(placePrimeTo I).asIdeal` is `I` by definition, so the instance transfers.
-  have : Q.LiesOver (placePrimeTo I).asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
+  have : Q.LiesOver (placePrimeTo I).asIdeal := by rwa [asIdeal_placePrimeTo]
   rw [idealClass_apply, rayClassArtinMap_rayClassMk,
     NumberFieldArithmetic.artinHomAway_apply_eq_artinElementAway _ _ _ _ (placePrimeTo I)
       (NumberFieldArithmetic.coe_integralIdealsAwayHom 𝔪.support I)]
