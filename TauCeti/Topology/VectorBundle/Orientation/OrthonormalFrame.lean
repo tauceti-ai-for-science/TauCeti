@@ -81,6 +81,12 @@ def toOrientationCover (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F 
     VectorBundleOrientationCover F E ι :=
   ⟨p.proj, Orientation.map ι p.frame.toLinearEquiv o⟩
 
+/-- Unfolds `toOrientationCover`: the orientation of the fibre over the base point transported
+from `o` by the frame. -/
+theorem toOrientationCover_apply (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F E V) :
+    toOrientationCover o p = ⟨p.proj, Orientation.map ι p.frame.toLinearEquiv o⟩ :=
+  (rfl)
+
 @[simp]
 theorem proj_toOrientationCover (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F E V) :
     (toOrientationCover o p).proj = p.proj :=
