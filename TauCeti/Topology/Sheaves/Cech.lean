@@ -24,11 +24,12 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 # Čech complexes of flasque sheaves, and degree zero Čech cohomology
 
 Let `F` be a flasque sheaf of abelian groups on a topological space `X`. This file proves that
-for every finite open cover `U` of `X` the augmented Čech complex
-`0 ⟶ F(X) ⟶ Č⁰(U, F) ⟶ Č¹(U, F) ⟶ ⋯` is exact: flasque sheaves have no higher Čech cohomology
-for finite covers. Together with the acyclicity of flasque sheaves for derived-functor cohomology
-(`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`), this is the input to the comparison of
-Čech and derived-functor cohomology for covers whose finite intersections are acyclic.
+for every finite family of opens `U i` and every open `Y` contained in their union, the augmented
+Čech complex `0 ⟶ F(Y) ⟶ Č⁰(U, F(Y ∩ -)) ⟶ Č¹(U, F(Y ∩ -)) ⟶ ⋯` is exact: flasque sheaves have no
+higher Čech cohomology for finite covers of an open. The argument is elementary and uses no
+derived-functor cohomology; covers of `X` of any size are treated in
+`TauCeti.Topology.Sheaves.Flasque.Cech`, using the acyclicity of flasque sheaves for
+derived-functor cohomology (`TauCeti.Topology.subsingleton_H'_succ_of_isFlasque`).
 
 The proof is by induction on the number of members of the cover, applied more generally to the
 restricted presheaves `V ↦ F(Y ∩ V)` for opens `Y` contained in the union of the members. For a
@@ -51,11 +52,12 @@ sheaf cohomology `H⁰(X, F)`.
 * `TopCat.Sheaf.isSheafFor_ofArrows_prod`: for any sheaf `F`, a family of opens `V i` and an
   open `Y` contained in their union, the presheaf `V ↦ F(Y ∩ V)` satisfies the sheaf condition
   for the family `V i`.
+* `TopCat.Sheaf.isSheaf_prod_functor_flip_obj_op_comp`: for a sheaf `F` and an open `W`, the
+  presheaf `Y ↦ F(Y ∩ W)` is a sheaf; it is flasque when `F` is
+  (`TopCat.Sheaf.isFlasque_prod_functor_flip_obj_op_comp`).
 * `TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque`: for a flasque sheaf `F`, a
   finite family of opens `U i` and an open `Y` contained in their union, the augmented Čech
   complex of `V ↦ F(Y ∩ V)` for `U` is exact.
-* `TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque`: a flasque sheaf has an exact
-  augmented Čech complex for every finite open cover.
 * `TauCeti.Topology.quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top`: for any sheaf and any
   open cover of `X`, the augmentation of the Čech complex is a quasi-isomorphism in degree `0`.
 * `TauCeti.Topology.homologyZeroCechIso`: the degree `0` Čech cohomology of a sheaf for an open
@@ -107,7 +109,35 @@ theorem isSheafFor_ofArrows_prod (Y : Opens X) {ι : Type*} (V : ι → Opens X)
       ConcreteCategory.comp_apply]
     exact congrArg _ (hx i j)
 
+/-- For a sheaf `F` and an open `W`, the presheaf `Y ↦ F(Y ∩ W)` is a sheaf. -/
+theorem isSheaf_prod_functor_flip_obj_op_comp (W : Opens X) :
+    Presheaf.IsSheaf ((prod.functor.flip.obj W).op ⋙ F.presheaf) := by
+  refine (Presheaf.isSheaf_iff_isSheafUniqueGluing _).2 fun ι V sf hsf ↦ ?_
+  have hcover : (iSup V ⨯ W) ≤ ⨆ i, (V i ⨯ W) := by
+    simp only [CompleteLattice.prod_eq_inf, iSup_inf_eq, le_rfl]
+  -- the sections agree on `(V i ∩ W) ∩ (V j ∩ W)`, which lies in `(V i ∩ V j) ∩ W`
+  have hcompat : Presheaf.IsCompatible F.presheaf (fun i ↦ V i ⨯ W) sf := fun i j ↦ by
+    have h : (V i ⨯ W) ⊓ (V j ⨯ W) ≤ ((V i ⊓ V j) ⨯ W) := by
+      simp only [CompleteLattice.prod_eq_inf]
+      exact le_inf (le_inf (inf_le_left.trans inf_le_left) (inf_le_right.trans inf_le_left))
+        (inf_le_left.trans inf_le_right)
+    rw [show (V i ⨯ W).infLELeft (V j ⨯ W) =
+        homOfLE h ≫ (prod.functor.flip.obj W).map (homOfLE inf_le_left) from Subsingleton.elim _ _,
+      show (V i ⨯ W).infLERight (V j ⨯ W) =
+        homOfLE h ≫ (prod.functor.flip.obj W).map (homOfLE inf_le_right) from Subsingleton.elim _ _,
+      op_comp, op_comp, F.presheaf.map_comp, F.presheaf.map_comp, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply]
+    exact congrArg _ (hsf i j)
+  obtain ⟨s, hs, hs'⟩ := F.existsUnique_gluing' (fun i ↦ V i ⨯ W) (iSup V ⨯ W)
+    (fun i ↦ (prod.functor.flip.obj W).map (Opens.leSupr V i)) hcover sf hcompat
+  exact ⟨s, hs, fun t ht ↦ hs' t ht⟩
+
 variable [F.presheaf.IsFlasque]
+
+/-- For a flasque sheaf `F` and an open `W`, the presheaf `Y ↦ F(Y ∩ W)` is flasque. -/
+instance isFlasque_prod_functor_flip_obj_op_comp (W : Opens X) :
+    Presheaf.IsFlasque ((prod.functor.flip.obj W).op ⋙ F.presheaf) where
+  epi _ := inferInstanceAs (Epi (F.presheaf.map _))
 
 /-- **Two-member covers.** For a flasque sheaf `F`, opens `V 0`, `V 1` and an open `Y` contained
 in their union, the augmented Čech complex of `V ↦ F(Y ∩ V)` for the family `V 0`, `V 1` is
@@ -188,16 +218,6 @@ theorem quasiIso_cechAugmentation_prod_of_isFlasque {ι : Type u} [Finite ι] (U
       ⟨fun i ↦ ⟨i, Finset.mem_univ i⟩, fun _ ↦ 𝟙 _⟩ ⟨Subtype.val, fun _ ↦ 𝟙 _⟩).2
       (quasiIso_cechAugmentation_prod_finset F U Finset.univ_nonempty Y
         (by rwa [Finset.sup_univ_eq_iSup]))
-
-/-- **Flasque sheaves are acyclic for finite covers.** For a flasque sheaf `F` of abelian groups
-on `X` and a finite family of opens `U i` covering `X`, the augmented Čech complex
-`0 ⟶ F(X) ⟶ Č⁰(U, F) ⟶ Č¹(U, F) ⟶ ⋯` is exact: `F` has no Čech cohomology for `U` in positive
-degrees, and its degree `0` Čech cohomology is `F(X)`. -/
-theorem quasiIso_cechAugmentation_of_isFlasque {ι : Type u} [Finite ι] (U : ι → Opens X)
-    (hU : ⨆ i, U i = ⊤) : QuasiIso (cechAugmentation U isTerminalTop F.presheaf) :=
-  (quasiIso_cechAugmentation_iff_of_iso _ _ _
-    (Functor.isoWhiskerRight (NatIso.op isTerminalTop.prodLeftUnitor) F.presheaf)).2
-    (quasiIso_cechAugmentation_prod_of_isFlasque F U ⊤ hU.ge)
 
 end TopCat.Sheaf
 

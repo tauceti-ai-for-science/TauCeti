@@ -12,6 +12,7 @@ import Mathlib.Algebra.Category.Grp.AB
 import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
+import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
@@ -29,7 +30,8 @@ The proof is by dimension shifting. Embed `F` into an injective sheaf `I`, with 
   `0 ⟶ F(V) ⟶ I(V) ⟶ Q(V) ⟶ 0` is exact, because `H¹(V, F) = 0`; so the Čech complexes form a
   short exact sequence `0 ⟶ Č(U, F) ⟶ Č(U, I) ⟶ Č(U, Q) ⟶ 0`.
 * `I` is flasque, so `Č(U, I)` has no cohomology in positive degrees
-  (`TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque`), and neither has `I` sheaf cohomology.
+  (`TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque`), and neither has `I` sheaf
+  cohomology.
   The two long exact sequences then give `Hⁿ⁺¹(U, F) ≅ Hⁿ(U, Q)` and `Hⁿ⁺¹(X, F) ≅ Hⁿ(X, Q)` for
   `n ≥ 1`, while in degree one both `H¹(U, F)` and `H¹(X, F)` are the cokernel of
   `I(X) ⟶ Q(X)`, since `H⁰(U, -)` and `H⁰(X, -)` are both global sections.
@@ -140,7 +142,9 @@ private lemma isZero_homology_cechComplex_under [Finite ι]
   have : TopCat.Presheaf.IsFlasque (TopCat.Sheaf.presheaf (Injective.under F)) :=
     isFlasque_of_injective (Injective.under F)
   have : QuasiIso (cechAugmentation U isTerminalTop (Injective.under F).obj) :=
-    TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque (Injective.under F) U hU
+    (quasiIso_cechAugmentation_iff_of_iso _ _ _
+      (Functor.isoWhiskerRight (NatIso.op isTerminalTop.prodLeftUnitor) _)).2
+      (TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque (Injective.under F) U ⊤ hU.ge)
   exact (CochainComplex.exactAt_succ_single_obj _ k).isZero_homology.of_iso
     (asIso (HomologicalComplex.homologyMap
       (cechAugmentation U isTerminalTop (Injective.under F).obj) (k + 1))).symm
