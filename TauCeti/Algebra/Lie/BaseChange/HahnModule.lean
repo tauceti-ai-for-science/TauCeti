@@ -5,36 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.Basic
-public import TauCeti.Algebra.Lie.Loop.HahnModule
+public import TauCeti.Algebra.Lie.BaseChange.Hom
+public import TauCeti.Algebra.Lie.HahnModule
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
 
 /-!
-# Scalar extension of a Lie algebra to Hahn series
+# Lie algebra valued Hahn series as a scalar extension
 
-For a Lie algebra `L` over a commutative ring `R`, the scalar extension
-`HahnSeries Γ R ⊗[R] L` carries Mathlib's scalar-extension bracket
-`⁅f ⊗ x, g ⊗ y⁆ = f g ⊗ ⁅x, y⁆`, while the `L`-valued Hahn series `HahnModule Γ R L` carry the
-coefficient convolution bracket. The canonical comparison map, sending `f ⊗ x` to `f` times the
-constant series `x`, intertwines the two brackets, so it is a morphism of Lie algebras over
-`HahnSeries Γ R`. When `L` is finite free over `R` it is bijective, hence a Lie algebra
-equivalence over `HahnSeries Γ R`.
+Let `L` be a Lie algebra over a commutative ring `R`. The constant series give a homomorphism of
+Lie algebras `HahnModule.constLieHom : L →ₗ⁅R⁆ HahnModule Γ R L`, and its extension of scalars
+`HahnSeries Γ R ⊗[R] L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L`, sending `f ⊗ x` to `f • x`, has
+`HahnModule.tensorProductToHahnModule` as its underlying linear map. So that canonical
+comparison respects brackets: the bracket `⁅f ⊗ x, g ⊗ y⁆ = f g ⊗ ⁅x, y⁆` of the extended Lie
+algebra goes to the coefficient convolution bracket of `L`-valued series.
 
-For `Γ = ℤ` and a finite-dimensional Lie algebra `L` over a field `K`, this identifies the formal
-currents `K((t)) ⊗[K] L` (`TauCeti.currentAlgebra K L`) with the formal loop algebra `L((t))`
-as Lie algebras over `K((t))`. The comparison preserves coefficients, and it restricts to the
-embedding `LieAlgebra.LoopAlgebra.toHahnModule` of polynomial loops `L[t, t⁻¹]`.
+When `L` is finite free over `R`, the comparison is bijective, so it is an isomorphism of Lie
+algebras over `HahnSeries Γ R`. For `Γ = ℤ` and a finite-dimensional Lie algebra `L` over a
+field `K`, this is the isomorphism `K((t)) ⊗[K] L ≃ L((t))` of Lie algebras over `K((t))`, where
+`L((t))` carries the coefficientwise action of `K((t))` and the convolution bracket. The
+file `TauCeti.Algebra.Lie.Current.HahnModule` compares it with the formal currents
+`TauCeti.currentAlgebra`.
 
-## Main definitions and results
+## Main definitions
 
-* `HahnModule.tensorProductLieHom`: the comparison map preserves brackets, so it is a morphism
-  of Lie algebras over `HahnSeries Γ R`, for an arbitrary coefficient Lie algebra.
-* `HahnModule.tensorProductLieEquiv`: for finite free `L`, the Lie algebra equivalence
+* `HahnModule.constLieHom`: the constant series `L →ₗ⁅R⁆ HahnModule Γ R L`.
+* `HahnModule.tensorProductLieEquiv`: for finite free `L`, the isomorphism of Lie algebras
   `HahnSeries Γ R ⊗[R] L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L`.
-* `HahnModule.coeff_tensorProductToHahnModule`: on formal currents, the comparison preserves
-  coefficients.
-* `HahnModule.tensorProductToHahnModule_ofLoop`: on polynomial loops, the comparison is
-  `LieAlgebra.LoopAlgebra.toHahnModule`.
+
+## Main results
+
+* `HahnModule.liftBaseChange_constLieHom`: the extension of scalars of `constLieHom` is
+  `tensorProductToHahnModule`.
+* `HahnModule.tensorProductToHahnModule_lie`: so the comparison respects brackets, for every
+  Lie algebra `L`.
+* `HahnModule.isBaseChange_constLieHom`: for finite free `L`, the constant series exhibit
+  `HahnModule Γ R L` as the base change of `L` along `R → HahnSeries Γ R`.
+* `HahnModule.toLinearEquiv_tensorProductLieEquiv`: the Lie algebra isomorphism has underlying
+  linear equivalence `HahnModule.tensorProductEquiv`.
 
 ## References
 
@@ -49,99 +56,76 @@ open TensorProduct HahnSeries
 
 namespace HahnModule
 
-variable {Γ R L : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+variable (Γ R L : Type*) [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
   [CommRing R] [LieRing L] [LieAlgebra R L]
 
+/-- The constant `L`-valued Hahn series, as a homomorphism of Lie algebras over `R`. -/
+def constLieHom : L →ₗ⁅R⁆ HahnModule Γ R L where
+  toFun x := of R (single 0 x)
+  map_add' x y := by rw [single_add, of_add]
+  map_smul' r x := (congrArg (of R) ((single.linearMap 0).map_smul r x)).trans (of_smul r _)
+  map_lie' {x y} := by rw [single_lie_single, add_zero]
+
+variable {Γ R L}
+
+/-- The constant series of `x` is the monomial `x t ^ 0`. -/
+@[simp]
+theorem constLieHom_apply (x : L) : constLieHom Γ R L x = of R (single 0 x) :=
+  (rfl)
+
+/-- The extension of scalars of the constant series along `R → HahnSeries Γ R` is the canonical
+comparison `f ⊗ x ↦ f • x`, without any finiteness assumption on `L`. -/
+@[simp]
+theorem liftBaseChange_constLieHom :
+    (constLieHom Γ R L : L →ₗ[R] HahnModule Γ R L).liftBaseChange (HahnSeries Γ R) =
+      tensorProductToHahnModule Γ R L := by
+  ext x
+  simp
+
+/-- The canonical comparison `f ⊗ x ↦ f • x` respects brackets, for every Lie algebra `L`. -/
+@[simp]
+theorem tensorProductToHahnModule_lie (u v : HahnSeries Γ R ⊗[R] L) :
+    tensorProductToHahnModule Γ R L ⁅u, v⁆ =
+      ⁅tensorProductToHahnModule Γ R L u, tensorProductToHahnModule Γ R L v⁆ := by
+  rw [← liftBaseChange_constLieHom, ← LieHom.coe_liftBaseChange]
+  exact LieHom.map_lie _ u v
+
+variable [Module.Free R L] [Module.Finite R L]
+
+/-- For a finite free Lie algebra `L`, the constant series exhibit `L`-valued Hahn series as the
+base change of `L` along `R → HahnSeries Γ R`. -/
+theorem isBaseChange_constLieHom :
+    IsBaseChange (HahnSeries Γ R) (constLieHom Γ R L : L →ₗ[R] HahnModule Γ R L) :=
+  .of_equiv (tensorProductEquiv Γ R L) fun x ↦ by simp
+
 variable (Γ R L) in
-/-- The scalar-extension map to Lie-valued Hahn series, as a morphism of Lie algebras over
-`HahnSeries Γ R`. It sends `f ⊗ x` to `f` times the constant series `x`, and intertwines the
-scalar-extension bracket with the coefficient convolution bracket. -/
-def tensorProductLieHom : HahnSeries Γ R ⊗[R] L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L where
-  __ := tensorProductToHahnModule Γ R L
-  map_lie' {z w} := by
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom]
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => simp [hz, hz']
-    | tmul f x =>
-      induction w using TensorProduct.inductionOn with
-      | add w w' hw hw' => simp [hw, hw']
-      | tmul g y => simp [single_lie_single, mul_smul, smul_comm f g]
+/-- **Formal loops are the scalar extension of a finite free Lie algebra.** The comparison
+`f ⊗ x ↦ f • x` is an isomorphism of Lie algebras over `HahnSeries Γ R`, from the extension of
+scalars of `L` to the `L`-valued Hahn series with the convolution bracket. For a
+finite-dimensional Lie algebra `L` over a field `K`, this is `K((t)) ⊗[K] L ≃ L((t))` over
+`K((t))`. -/
+def tensorProductLieEquiv : HahnSeries Γ R ⊗[R] L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L :=
+  (isBaseChange_constLieHom (Γ := Γ) (R := R) (L := L)).lieEquiv
 
-/-- The Lie algebra morphism is the scalar-extension map. -/
+/-- The Lie algebra isomorphism is the canonical comparison `f ⊗ x ↦ f • x`. -/
 @[simp]
-theorem tensorProductLieHom_apply (z : HahnSeries Γ R ⊗[R] L) :
-    tensorProductLieHom Γ R L z = tensorProductToHahnModule Γ R L z :=
-  (rfl)
+theorem tensorProductLieEquiv_apply (z : HahnSeries Γ R ⊗[R] L) :
+    tensorProductLieEquiv Γ R L z = tensorProductToHahnModule Γ R L z := by
+  induction z with
+  | tmul f x => simp [tensorProductLieEquiv]
+  | add z w hz hw => rw [map_add, map_add, hz, hw]
 
-/-- The underlying linear map of the Lie algebra morphism is the scalar-extension map. -/
+/-- The Lie algebra isomorphism has underlying linear equivalence `tensorProductEquiv`. -/
 @[simp]
-theorem toLinearMap_tensorProductLieHom :
-    (tensorProductLieHom Γ R L : HahnSeries Γ R ⊗[R] L →ₗ[HahnSeries Γ R] HahnModule Γ R L) =
-      tensorProductToHahnModule Γ R L :=
-  (rfl)
-
-variable (Γ R L) in
-/-- For a finite free Lie algebra `L` over `R`, the scalar extension `HahnSeries Γ R ⊗[R] L`
-and the `L`-valued Hahn series are isomorphic as Lie algebras over `HahnSeries Γ R`. For a
-finite-dimensional Lie algebra over a field `K`, this is `K((t)) ⊗[K] L ≃ L((t))`. -/
-def tensorProductLieEquiv [Module.Free R L] [Module.Finite R L] :
-    HahnSeries Γ R ⊗[R] L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L :=
-  LieEquiv.ofBijective (tensorProductLieHom Γ R L)
-    (tensorProductToHahnModule_bijective_of_basis (Module.Free.chooseBasis R L))
-
-/-- The Lie algebra equivalence is the scalar-extension map. -/
-@[simp]
-theorem tensorProductLieEquiv_apply [Module.Free R L] [Module.Finite R L]
-    (z : HahnSeries Γ R ⊗[R] L) :
-    tensorProductLieEquiv Γ R L z = tensorProductToHahnModule Γ R L z :=
-  (rfl)
-
-/-- The underlying linear equivalence of the Lie algebra equivalence is
-`HahnModule.tensorProductEquiv`. -/
-@[simp]
-theorem toLinearEquiv_tensorProductLieEquiv [Module.Free R L] [Module.Finite R L] :
+theorem toLinearEquiv_tensorProductLieEquiv :
     (tensorProductLieEquiv Γ R L).toLinearEquiv = tensorProductEquiv Γ R L :=
-  LinearEquiv.ext fun z ↦ by
-    rw [LieEquiv.coe_toLinearEquiv, tensorProductLieEquiv_apply, tensorProductEquiv_apply]
+  LinearEquiv.ext fun z ↦ by simp
 
-/-- The inverse Lie algebra equivalence is the inverse of `HahnModule.tensorProductEquiv`. -/
+/-- The inverse of the Lie algebra isomorphism is the inverse of `tensorProductEquiv`. -/
 @[simp]
-theorem tensorProductLieEquiv_symm_apply [Module.Free R L] [Module.Finite R L]
-    (x : HahnModule Γ R L) :
+theorem tensorProductLieEquiv_symm_apply (x : HahnModule Γ R L) :
     (tensorProductLieEquiv Γ R L).symm x = (tensorProductEquiv Γ R L).symm x := by
   rw [LieEquiv.symm_apply_eq, tensorProductLieEquiv_apply, ← tensorProductEquiv_apply,
     LinearEquiv.apply_symm_apply]
-
-/-! ### Formal currents and polynomial loops -/
-
-section Current
-
-open scoped LaurentSeries
-
--- Match the coefficientwise scalar action used to define formal currents.
-attribute [local instance 1100] HahnSeries.instAlgebra
-
-/-- On formal currents, the comparison with module-valued Laurent series preserves
-coefficients. -/
-@[simp]
-theorem coeff_tensorProductToHahnModule {V : Type*} [AddCommGroup V] [Module R V]
-    (u : TauCeti.currentAlgebra R V) (n : ℤ) :
-    ((of R).symm (tensorProductToHahnModule ℤ R V u)).coeff n =
-      TauCeti.CurrentAlgebra.coeff R V n u := by
-  induction u using TensorProduct.inductionOn with
-  | tmul f x => simp
-  | add u v hu hv => simp only [map_add, of_symm_add, HahnSeries.coeff_add, hu, hv]
-
-/-- On polynomial loops, the comparison of formal currents with `L`-valued Laurent series is the
-embedding `LieAlgebra.LoopAlgebra.toHahnModule`. -/
-@[simp]
-theorem tensorProductToHahnModule_ofLoop (p : LieAlgebra.loopAlgebra R ℤ L) :
-    tensorProductToHahnModule ℤ R L (TauCeti.CurrentAlgebra.ofLoop R L p) =
-      LieAlgebra.LoopAlgebra.toHahnModule R ℤ L p := by
-  ext n
-  rw [coeff_tensorProductToHahnModule, TauCeti.CurrentAlgebra.coeff_ofLoop,
-    LieAlgebra.LoopAlgebra.coeff_toHahnModule]
-
-end Current
 
 end HahnModule
