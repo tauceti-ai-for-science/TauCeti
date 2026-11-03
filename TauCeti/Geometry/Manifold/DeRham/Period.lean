@@ -164,6 +164,13 @@ theorem pathClassIntegral_symm (γ : Path.Homotopic.Quotient x y) :
   rw [eq_neg_iff_add_eq_zero, ← pathClassIntegral_trans, Path.Homotopic.Quotient.symm_trans,
     pathClassIntegral_refl]
 
+/-- Casting a path class along equalities of its endpoints does not change the integral. -/
+@[simp]
+theorem pathClassIntegral_cast {x' y' : M} (γ : Path.Homotopic.Quotient x y) (hx : x' = x)
+    (hy : y' = y) : pathClassIntegral φ (γ.cast hx hy) = pathClassIntegral φ γ := by
+  subst hx hy
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
 /-- **The fundamental theorem of calculus for path classes.** The integral of the differential of
 a `C²` function along a path class is the difference of the values of the function at the
 endpoints. -/

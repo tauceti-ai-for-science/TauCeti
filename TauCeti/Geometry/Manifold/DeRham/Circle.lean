@@ -115,6 +115,10 @@ theorem coe_circleAngularClosedForm :
       circleAngularForm :=
   (rfl)
 
+/-- The angular form on the circle is closed. -/
+theorem mextDeriv_circleAngularForm : mextDeriv circleAngularForm = 0 := by
+  simpa using (mem_closedForms (𝓡 1) _).mp circleAngularClosedForm.2
+
 /-- The angular form takes the value `1` on the velocity of the standard parametrization
 `t ↦ exp (t i)` of the circle. -/
 theorem circleAngularForm_apply_curveVelocity_circleExp (t : ℝ) :
