@@ -9,9 +9,13 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import TauCeti.Analysis.Matrix.PartialCorrelation
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.Calculus.Deriv.Pi
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Correlation coordinates and the reference Lebesgue measure for correlation matrices
@@ -45,6 +49,10 @@ Partial correlations parametrize this region: the forward map
 `(-1, 1) ^ J` onto `TauCeti.posDefCorrelationRegion p`, and its inverse takes the Cholesky factor
 of a positive-definite correlation matrix and reads off its partial correlations with
 `Matrix.partialCorrelationOfCholesky` (`TauCeti.partialCorrelationOfCorrelationCoordinates`).
+Its Jacobian determinant is `∏ (1 - zᵢⱼ²) ^ ((p - j - 2) / 2)`, with zero-based column index `j`,
+which gives the change of variables from the positive-definite region to partial correlations.
+This substitution turns integrals of the LKJ density `det R ^ (η - 1)` into products of
+one-dimensional symmetric beta integrals.
 
 ## Main declarations
 
@@ -75,9 +83,17 @@ of a positive-definite correlation matrix and reads off its partial correlations
 * `TauCeti.closure_posDefCorrelationRegion` — the closure is the positive-semidefinite region.
 * `TauCeti.frontier_posDefCorrelationRegion`, `TauCeti.volume_frontier_posDefCorrelationRegion` —
   the frontier is the singular positive-semidefinite region, and it is null.
+* `TauCeti.det_fderiv_correlationCoordinatesOfPartialCorrelation` — the Jacobian determinant of the
+  partial-correlation parametrization.
+* `TauCeti.setIntegral_comp_correlationCoordinatesOfPartialCorrelation`,
+  `TauCeti.setLIntegral_comp_correlationCoordinatesOfPartialCorrelation`,
+  `TauCeti.integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff` — change of variables
+  from the positive-definite region to partial correlations.
 
 ## References
 
+* H. Joe, *Generating random correlation matrices based on partial correlations*, J. Multivariate
+  Anal. 97 (2006), 2177–2189.
 * D. Lewandowski, D. Kurowicka, H. Joe, *Generating random correlation matrices based on vines
   and extended onion method*, J. Multivariate Anal. 100 (2009), 1989–2001.
 -/
@@ -87,7 +103,7 @@ public section
 noncomputable section
 
 open MeasureTheory Topology Filter Set
-open scoped ContDiff
+open scoped ContDiff ENNReal
 
 namespace TauCeti
 
@@ -674,5 +690,254 @@ theorem map_symmetricCongruenceLinearMap_diagonal_correlationLebesgue {s : Fin p
   funext ij
   simp [hcoe, ij.2]
   ring
+
+/-! ### The Jacobian of the partial-correlation parametrization
+
+The coordinate of the forward map at `(i, j)` only involves the partial correlations in row `j`
+and in row `i` up to column `j`, all of which precede `(i, j)` in the lexicographic order of
+positions. Its derivative is therefore triangular for that order, and its diagonal entry at
+`(i, j)` is the coefficient `Lⱼⱼ ∏ k<j, √(1 - zᵢₖ²)` of `zᵢⱼ` in `∑ k ≤ j, Lᵢₖ Lⱼₖ`. Collecting the
+square-root factors gives the Jacobian determinant `∏ (1 - zᵢⱼ²) ^ ((p - j - 2) / 2)`, with
+zero-based column index `j`, and hence the change of variables from the positive-definite
+correlation region to the open cube of partial correlations. -/
+
+section Jacobian
+
+private theorem isOpen_partialCorrelationCube :
+    IsOpen {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} := by
+  simp only [ofPred_forall]
+  exact isOpen_iInter_of_finite fun ij ↦ isOpen_lt (by fun_prop) continuous_const
+
+private theorem differentiableAt_correlationCoordinatesOfPartialCorrelation
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+    DifferentiableAt ℝ correlationCoordinatesOfPartialCorrelation z :=
+  (contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
+    (by simp)).differentiableAt (isOpen_partialCorrelationCube.mem_nhds hz)
+
+/-- Moving the partial correlation at `b` traces the partial derivative in direction `b` of each
+coordinate of the forward map. -/
+private theorem hasDerivAt_correlationCoordinatesOfPartialCorrelation_update
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) (a b : strictLowerTriangle p) :
+    HasDerivAt (fun t ↦ correlationCoordinatesOfPartialCorrelation (Function.update z b t) a)
+      (fderiv ℝ correlationCoordinatesOfPartialCorrelation z (Pi.single b 1) a) (z b) := by
+  have hF : HasFDerivAt correlationCoordinatesOfPartialCorrelation
+      (fderiv ℝ correlationCoordinatesOfPartialCorrelation z) (Function.update z b (z b)) := by
+    rw [Function.update_eq_self]
+    exact (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
+  exact hasDerivAt_pi.1 (hF.comp_hasDerivAt (z b) (hasDerivAt_update z b (z b))) a
+
+/-- A coordinate of the forward map does not depend on the partial correlations at later
+positions in the lexicographic order. -/
+private theorem correlationCoordinatesOfPartialCorrelation_update_of_lt
+    (z : strictLowerTriangle p → ℝ) {a b : strictLowerTriangle p} (hab : toLex a.1 < toLex b.1)
+    (t : ℝ) :
+    correlationCoordinatesOfPartialCorrelation (Function.update z b t) a =
+      correlationCoordinatesOfPartialCorrelation z a := by
+  simp only [correlationCoordinatesOfPartialCorrelation_apply]
+  refine partialCorrelationGram_congr fun c hc ↦ Function.update_of_ne ?_ _ _
+  rintro rfl
+  refine hab.not_ge (Prod.Lex.toLex_le_toLex.2 ?_)
+  rcases hc with ⟨h₁, h₂⟩ | h₁
+  · exact Or.inr ⟨h₁, h₂⟩
+  · exact Or.inl (h₁ ▸ a.2)
+
+/-- Moving the partial correlation at `(i, j)` moves the coordinate of the forward map at
+`(i, j)` affinely, with slope `Lⱼⱼ ∏ k<j, √(1 - zᵢₖ²)`. -/
+private theorem correlationCoordinatesOfPartialCorrelation_update_self
+    (z : strictLowerTriangle p → ℝ) (a : strictLowerTriangle p) (t : ℝ) :
+    correlationCoordinatesOfPartialCorrelation (Function.update z a t) a =
+      correlationCoordinatesOfPartialCorrelation z a +
+        (t - z a) * (partialCorrelationCholesky z a.1.2 a.1.2 *
+          ∏ c : strictLowerTriangle p with c.1.1 = a.1.1 ∧ c.1.2 < a.1.2,
+            √(1 - z c ^ 2)) := by
+  obtain ⟨⟨i, j⟩, hji⟩ := a
+  dsimp only at hji ⊢
+  set w := Function.update z ⟨(i, j), hji⟩ t
+  have hrow (k : Fin p) : partialCorrelationCholesky w j k = partialCorrelationCholesky z j k :=
+    partialCorrelationCholesky_congr fun c hc _ ↦ Function.update_of_ne (by
+      rintro rfl
+      exact hji.ne' hc) _ _
+  have hlt (k : Fin p) (hk : k < j) :
+      partialCorrelationCholesky w i k = partialCorrelationCholesky z i k :=
+    partialCorrelationCholesky_congr fun c _ hck ↦ Function.update_of_ne (by
+      rintro rfl
+      exact (hck.trans_lt hk).false) _ _
+  have hself : partialCorrelationCholesky w i j = partialCorrelationCholesky z i j +
+      (t - z ⟨(i, j), hji⟩) *
+        ∏ c : strictLowerTriangle p with c.1.1 = i ∧ c.1.2 < j, √(1 - z c ^ 2) := by
+    have hwa : w ⟨(i, j), hji⟩ = t := Function.update_self _ _ _
+    rw [partialCorrelationCholesky_apply_of_gt _ hji, partialCorrelationCholesky_apply_of_gt _ hji,
+      hwa]
+    have hprod : ∏ c : strictLowerTriangle p with c.1.1 = i ∧ c.1.2 < j, √(1 - w c ^ 2) =
+        ∏ c : strictLowerTriangle p with c.1.1 = i ∧ c.1.2 < j, √(1 - z c ^ 2) := by
+      refine Finset.prod_congr rfl fun c hc ↦ ?_
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hc
+      have hwc : w c = z c := Function.update_of_ne (by
+        rintro rfl
+        exact hc.2.false) _ _
+      rw [hwc]
+    rw [hprod]
+    ring
+  simp only [correlationCoordinatesOfPartialCorrelation_apply, partialCorrelationGram_def,
+    Matrix.mul_apply, Matrix.transpose_apply, hrow]
+  rw [← sub_eq_iff_eq_add', ← Finset.sum_sub_distrib,
+    Finset.sum_eq_single j (fun k _ hkj ↦ ?_) (by simp), hself]
+  · ring
+  · rcases hkj.lt_or_gt with hk | hk
+    · rw [hlt k hk, sub_self]
+    · simp [partialCorrelationCholesky_apply_of_lt z hk]
+
+/-- Regrouping the factors on the diagonal of the Jacobian matrix: a strictly lower position
+`(i, k)` is followed in row `i` by the `i - k - 1` positions `(i, j)` with `k < j`, and column `i`
+contains `p - i - 1` positions. -/
+private theorem prod_jacobianDiagonal_factors (f : strictLowerTriangle p → ℝ) :
+    ∏ a : strictLowerTriangle p, ((∏ c : strictLowerTriangle p with c.1.1 = a.1.2, f c) *
+        ∏ c : strictLowerTriangle p with c.1.1 = a.1.1 ∧ c.1.2 < a.1.2, f c) =
+      ∏ c : strictLowerTriangle p, f c ^ (p - 2 - c.1.2 : ℕ) := by
+  have hcol : ∏ a : strictLowerTriangle p, ∏ c : strictLowerTriangle p with c.1.1 = a.1.2, f c =
+      ∏ c : strictLowerTriangle p, f c ^ (p - 1 - c.1.1 : ℕ) := by
+    rw [Finset.prod_comm' (t' := Finset.univ)
+      (s' := fun c ↦ {a : strictLowerTriangle p | a.1.2 = c.1.1}) fun a c ↦ by
+        simp only [Finset.mem_univ, Finset.mem_filter, true_and, and_true]
+        exact eq_comm]
+    refine Finset.prod_congr rfl fun c _ ↦ ?_
+    rw [Finset.prod_const, ← Fin.card_Ioi]
+    congr 1
+    refine Finset.card_bij (fun a _ ↦ a.1.1) (fun a ha ↦ ?_) (fun a ha b hb hab ↦ ?_)
+      (fun i hi ↦ ?_)
+    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
+      exact Finset.mem_Ioi.2 (ha ▸ a.2)
+    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha hb
+      exact Subtype.ext (Prod.ext hab (ha.trans hb.symm))
+    · exact ⟨⟨(i, c.1.1), Finset.mem_Ioi.1 hi⟩, by simp, rfl⟩
+  have hrow : ∏ a : strictLowerTriangle p,
+      ∏ c : strictLowerTriangle p with c.1.1 = a.1.1 ∧ c.1.2 < a.1.2, f c =
+        ∏ c : strictLowerTriangle p, f c ^ (c.1.1 - c.1.2 - 1 : ℕ) := by
+    rw [Finset.prod_comm' (t' := Finset.univ)
+      (s' := fun c ↦ {a : strictLowerTriangle p | a.1.1 = c.1.1 ∧ c.1.2 < a.1.2}) fun a c ↦ by
+        simp only [Finset.mem_univ, Finset.mem_filter, true_and, and_true]
+        exact and_congr_left' eq_comm]
+    refine Finset.prod_congr rfl fun c _ ↦ ?_
+    rw [Finset.prod_const, ← Fin.card_Ioo]
+    congr 1
+    refine Finset.card_bij (fun a _ ↦ a.1.2) (fun a ha ↦ ?_) (fun a ha b hb hab ↦ ?_)
+      (fun j hj ↦ ?_)
+    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
+      exact Finset.mem_Ioo.2 ⟨ha.2, ha.1 ▸ a.2⟩
+    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha hb
+      exact Subtype.ext (Prod.ext (ha.1.trans hb.1.symm) hab)
+    · exact ⟨⟨(c.1.1, j), (Finset.mem_Ioo.1 hj).2⟩, by simpa using (Finset.mem_Ioo.1 hj).1, rfl⟩
+  rw [Finset.prod_mul_distrib, hcol, hrow, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun c _ ↦ ?_
+  rw [← pow_add]
+  have hc : c.1.2.val < c.1.1.val := Fin.lt_def.1 c.2
+  have hi := c.1.1.isLt
+  congr 1
+  omega
+
+/-- The Jacobian determinant of the partial-correlation parametrization of positive-definite
+correlation matrices. With zero-based column index `j`, the partial correlation `zᵢⱼ` contributes
+the factor `(1 - zᵢⱼ²) ^ ((p - j - 2) / 2)`; in one-based indexing this is the familiar exponent
+`(p - j - 1) / 2`. -/
+theorem det_fderiv_correlationCoordinatesOfPartialCorrelation {z : strictLowerTriangle p → ℝ}
+    (hz : ∀ ij, |z ij| < 1) :
+    (fderiv ℝ correlationCoordinatesOfPartialCorrelation z).det =
+      ∏ ij : strictLowerTriangle p, (1 - z ij ^ 2) ^ (((p - 2 - ij.1.2 : ℕ) : ℝ) / 2) := by
+  set M := LinearMap.toMatrix'
+    (fderiv ℝ correlationCoordinatesOfPartialCorrelation z :
+      (strictLowerTriangle p → ℝ) →ₗ[ℝ] strictLowerTriangle p → ℝ)
+  have hM (a b : strictLowerTriangle p) :
+      M a b = fderiv ℝ correlationCoordinatesOfPartialCorrelation z (Pi.single b 1) a :=
+    LinearMap.toMatrix'_apply _ _ _
+  -- The matrix of the derivative is lower triangular for the lexicographic order of positions.
+  have htri : M.BlockTriangular fun a ↦ OrderDual.toDual (toLex a.1) := by
+    intro a b hab
+    have h := hasDerivAt_correlationCoordinatesOfPartialCorrelation_update hz a b
+    rw [funext (correlationCoordinatesOfPartialCorrelation_update_of_lt z
+      (OrderDual.toDual_lt_toDual.1 hab))] at h
+    rw [hM]
+    exact h.unique (hasDerivAt_const _ _)
+  have hdiag (a : strictLowerTriangle p) : M a a =
+      partialCorrelationCholesky z a.1.2 a.1.2 *
+        ∏ c : strictLowerTriangle p with c.1.1 = a.1.1 ∧ c.1.2 < a.1.2, √(1 - z c ^ 2) := by
+    have h := hasDerivAt_correlationCoordinatesOfPartialCorrelation_update hz a a
+    simp_rw [correlationCoordinatesOfPartialCorrelation_update_self] at h
+    rw [hM]
+    refine h.unique ?_
+    simpa using (((hasDerivAt_id' (z a)).sub_const (z a)).mul_const _).const_add
+      (correlationCoordinatesOfPartialCorrelation z a)
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix',
+    htri.det_eq_prod_diag fun a b h ↦ Subtype.ext (toLex.injective (OrderDual.toDual.injective h))]
+  simp_rw [hdiag, partialCorrelationCholesky_apply_self]
+  rw [prod_jacobianDiagonal_factors]
+  refine Finset.prod_congr rfl fun c _ ↦ ?_
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast,
+    ← Real.rpow_mul (sub_nonneg.2 ((sq_lt_one_iff_abs_lt_one _).2 (hz c)).le), one_div_mul_eq_div]
+
+private theorem prod_one_sub_sq_rpow_nonneg {z : strictLowerTriangle p → ℝ}
+    (hz : ∀ ij, |z ij| < 1) :
+    0 ≤ ∏ ij : strictLowerTriangle p, (1 - z ij ^ 2) ^ (((p - 2 - ij.1.2 : ℕ) : ℝ) / 2) :=
+  Finset.prod_nonneg fun ij _ ↦
+    Real.rpow_nonneg (sub_nonneg.2 ((sq_lt_one_iff_abs_lt_one _).2 (hz ij)).le) _
+
+/-- Change of variables to partial correlations for Bochner integrals over the positive-definite
+correlation region: the Jacobian factor is `∏ (1 - zᵢⱼ²) ^ ((p - j - 2) / 2)`, with zero-based
+column index `j`. -/
+theorem setIntegral_comp_correlationCoordinatesOfPartialCorrelation {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (g : (strictLowerTriangle p → ℝ) → E) :
+    ∫ z in {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1},
+        (∏ ij : strictLowerTriangle p, (1 - z ij ^ 2) ^ (((p - 2 - ij.1.2 : ℕ) : ℝ) / 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z) =
+      ∫ x in posDefCorrelationRegion p, g x := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integral_image_eq_integral_abs_det_fderiv_smul volume
+      isOpen_partialCorrelationCube.measurableSet
+      (fun z hz ↦ (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
+        |>.hasFDerivWithinAt)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine setIntegral_congr_fun isOpen_partialCorrelationCube.measurableSet fun z hz ↦ ?_
+  rw [det_fderiv_correlationCoordinatesOfPartialCorrelation hz,
+    abs_of_nonneg (prod_one_sub_sq_rpow_nonneg hz)]
+
+/-- Change of variables to partial correlations for Lebesgue integrals over the positive-definite
+correlation region. -/
+theorem setLIntegral_comp_correlationCoordinatesOfPartialCorrelation
+    (g : (strictLowerTriangle p → ℝ) → ℝ≥0∞) :
+    ∫⁻ z in {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1},
+        ENNReal.ofReal
+            (∏ ij : strictLowerTriangle p, (1 - z ij ^ 2) ^ (((p - 2 - ij.1.2 : ℕ) : ℝ) / 2)) *
+          g (correlationCoordinatesOfPartialCorrelation z) =
+      ∫⁻ x in posDefCorrelationRegion p, g x := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    lintegral_image_eq_lintegral_abs_det_fderiv_mul volume
+      isOpen_partialCorrelationCube.measurableSet
+      (fun z hz ↦ (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
+        |>.hasFDerivWithinAt)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine setLIntegral_congr_fun isOpen_partialCorrelationCube.measurableSet fun z hz ↦ ?_
+  rw [det_fderiv_correlationCoordinatesOfPartialCorrelation hz,
+    abs_of_nonneg (prod_one_sub_sq_rpow_nonneg hz)]
+
+/-- A function is integrable on the positive-definite correlation region exactly when its
+composition with the partial-correlation parametrization, weighted by the Jacobian factor, is
+integrable on the open cube. -/
+theorem integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : (strictLowerTriangle p → ℝ) → E} :
+    IntegrableOn (fun z ↦
+        (∏ ij : strictLowerTriangle p, (1 - z ij ^ 2) ^ (((p - 2 - ij.1.2 : ℕ) : ℝ) / 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z))
+        {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} ↔
+      IntegrableOn g (posDefCorrelationRegion p) := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
+      isOpen_partialCorrelationCube.measurableSet
+      (fun z hz ↦ (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
+        |>.hasFDerivWithinAt)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine integrableOn_congr_fun (fun z hz ↦ ?_) isOpen_partialCorrelationCube.measurableSet
+  rw [det_fderiv_correlationCoordinatesOfPartialCorrelation hz,
+    abs_of_nonneg (prod_one_sub_sq_rpow_nonneg hz)]
+
+end Jacobian
 
 end TauCeti

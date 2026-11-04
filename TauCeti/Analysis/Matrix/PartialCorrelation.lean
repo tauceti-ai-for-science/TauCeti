@@ -21,8 +21,10 @@ import Mathlib.Order.Interval.Finset.Fin
 
 Strictly lower coordinates in `(-1, 1)` determine a lower-triangular matrix with positive
 diagonal and unit-length rows. Its Gram matrix is therefore positive definite with unit
-diagonal. The determinant factors as the product of `1 - zᵢⱼ²`. These formulas are the
-algebraic part of the partial-correlation change of variables for correlation matrices.
+diagonal. The determinant factors as the product of `1 - zᵢⱼ²`. Each entry of the factor, and
+each Gram entry below the diagonal, depends only on the partial correlations at lexicographically
+earlier positions, which makes the derivative of the construction triangular. These formulas are
+the algebraic part of the partial-correlation change of variables for correlation matrices.
 The unit-diagonal and determinant identities also hold on the closed cube.
 
 Conversely, `Matrix.partialCorrelationOfCholesky` reads partial correlations off a triangular
@@ -140,6 +142,39 @@ theorem partialCorrelationCholesky_apply_self (z : strictLowerTriangle p → ℝ
 theorem isLowerTriangular_partialCorrelationCholesky (z : strictLowerTriangle p → ℝ) :
     (partialCorrelationCholesky z).IsLowerTriangular :=
   fun _ _ h ↦ partialCorrelationCholesky_apply_of_lt z h
+
+/-- The entry of the triangular factor in row `i` and column `k` depends only on the partial
+correlations in row `i` and columns at most `k`. -/
+theorem partialCorrelationCholesky_congr {z w : strictLowerTriangle p → ℝ} {i k : Fin p}
+    (h : ∀ ij : strictLowerTriangle p, ij.1.1 = i → ij.1.2 ≤ k → z ij = w ij) :
+    partialCorrelationCholesky z i k = partialCorrelationCholesky w i k := by
+  rcases lt_trichotomy k i with hki | rfl | hik
+  · rw [partialCorrelationCholesky_apply_of_gt z hki, partialCorrelationCholesky_apply_of_gt w hki,
+      h ⟨(i, k), hki⟩ rfl le_rfl]
+    congr 1
+    refine Finset.prod_congr rfl fun ij hij ↦ ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
+    rw [h ij hij.1 hij.2.le]
+  · simp only [partialCorrelationCholesky_apply_self]
+    refine Finset.prod_congr rfl fun ij hij ↦ ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
+    rw [h ij hij (hij ▸ ij.2.le)]
+  · rw [partialCorrelationCholesky_apply_of_lt z hik, partialCorrelationCholesky_apply_of_lt w hik]
+
+/-- The Gram entry in row `i` and column `j` depends only on the partial correlations in row `j`
+and in row `i` up to column `j`. Below the diagonal, these all precede `(i, j)` in the
+lexicographic order of positions. -/
+theorem partialCorrelationGram_congr {z w : strictLowerTriangle p → ℝ} {i j : Fin p}
+    (h : ∀ ij : strictLowerTriangle p, (ij.1.1 = i ∧ ij.1.2 ≤ j) ∨ ij.1.1 = j → z ij = w ij) :
+    partialCorrelationGram z i j = partialCorrelationGram w i j := by
+  simp only [partialCorrelationGram_def, Matrix.mul_apply, Matrix.transpose_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rcases le_or_gt k j with hkj | hjk
+  · rw [partialCorrelationCholesky_congr (z := z) (w := w) (i := i) (k := k)
+        fun ij hi hk ↦ h ij (Or.inl ⟨hi, hk.trans hkj⟩),
+      partialCorrelationCholesky_congr (z := z) (w := w) (i := j) (k := k)
+        fun ij hi _ ↦ h ij (Or.inr hi)]
+  · simp [partialCorrelationCholesky_apply_of_lt _ hjk]
 
 private theorem row_sq_lt_one {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) (i j : Fin p) : partialCorrelationRow z i j ^ 2 < 1 := by
