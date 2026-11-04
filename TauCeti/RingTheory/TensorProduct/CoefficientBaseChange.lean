@@ -40,8 +40,8 @@ categories of modules over `R ⊗[k] Λ` for varying `R`.
   (`TauCeti.CoefficientBaseChange.map_smul`).
 * `TauCeti.CoefficientBaseChange.lid`: the `R ⊗[k] Λ`-linear isomorphism `R ⊗[R] N ≃ N`.
 * `TauCeti.CoefficientBaseChange.cancelBaseChange`: for a tower `R → S → T` and a module `M`
-  over `S ⊗[k] Λ` identified with `S ⊗[R] N`, the `T ⊗[k] Λ`-linear isomorphism
-  `T ⊗[R] N ≃ T ⊗[S] M`, `t ⊗ n ↦ t ⊗ e (1 ⊗ n)` for the identification `e`.
+  over `S ⊗[k] Λ` identified with `S ⊗[R] N` by `e`, the `T ⊗[k] Λ`-linear isomorphism
+  `T ⊗[S] M ≃ T ⊗[R] N`, `t ⊗ e (s ⊗ n) ↦ (s • t) ⊗ n`, with inverse `t ⊗ n ↦ t ⊗ e (1 ⊗ n)`.
 
 ## Implementation notes
 
@@ -206,37 +206,39 @@ variable (T : Type*) [CommRing T] [Algebra k T] [Algebra R T] [Algebra S T]
 
 variable (k Λ) in
 /-- Base change along a composite `R → S → T` is the composite of the base changes: the
-`T ⊗[k] Λ`-linear isomorphism `T ⊗[R] N ≃ T ⊗[S] M`, `t ⊗ n ↦ t ⊗ e (1 ⊗ n)`, for an
+`T ⊗[k] Λ`-linear isomorphism `T ⊗[S] M ≃ T ⊗[R] N`, `t ⊗ e (s ⊗ n) ↦ (s • t) ⊗ n`, for an
 `S ⊗[k] Λ`-module `M` identified with `S ⊗[R] N` by `e`. Its underlying `T`-linear
-isomorphism is Mathlib's `TensorProduct.AlgebraTensorModule.cancelBaseChange` followed by the
-base change of `e`. -/
+isomorphism is the base change of the inverse of `e` followed by Mathlib's
+`TensorProduct.AlgebraTensorModule.cancelBaseChange`. -/
 noncomputable def cancelBaseChange (e : S ⊗[R] N ≃ₗ[S ⊗[k] Λ] M) :
-    T ⊗[R] N ≃ₗ[T ⊗[k] Λ] T ⊗[S] M where
-  __ := (TensorProduct.AlgebraTensorModule.cancelBaseChange R S T T N).symm ≪≫ₗ
-    (e.restrictScalars S).baseChange S T _ _
-  map_smul' t x := by
-    induction t using TensorProduct.inductionOn with
-    | tmul t' l =>
-      induction x using TensorProduct.inductionOn with
-      | tmul t n => simp [← _root_.map_smul e]
-      | add x y hx hy =>
-        simp_all only [smul_add, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-          _root_.map_add]
-    | add t t' ht ht' =>
-      simp_all only [add_smul, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        _root_.map_add]
+    T ⊗[S] M ≃ₗ[T ⊗[k] Λ] T ⊗[R] N :=
+  -- The inverse `t ⊗ n ↦ t ⊗ e (1 ⊗ n)` is checked to be linear on tensors.
+  LinearEquiv.symm
+  { (TensorProduct.AlgebraTensorModule.cancelBaseChange R S T T N).symm ≪≫ₗ
+      (e.restrictScalars S).baseChange S T _ _ with
+    map_smul' t x := by
+      induction t using TensorProduct.inductionOn with
+      | tmul t' l =>
+        induction x using TensorProduct.inductionOn with
+        | tmul t n => simp [← _root_.map_smul e]
+        | add x y hx hy =>
+          simp_all only [smul_add, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom,
+            LinearEquiv.coe_coe, _root_.map_add]
+      | add t t' ht ht' =>
+        simp_all only [add_smul, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom,
+          LinearEquiv.coe_coe, _root_.map_add] }
 
 @[simp]
-theorem cancelBaseChange_tmul (e : S ⊗[R] N ≃ₗ[S ⊗[k] Λ] M) (t : T) (n : N) :
-    cancelBaseChange k Λ T e (t ⊗ₜ n) = t ⊗ₜ e (1 ⊗ₜ n) := (rfl)
+theorem cancelBaseChange_symm_tmul (e : S ⊗[R] N ≃ₗ[S ⊗[k] Λ] M) (t : T) (n : N) :
+    (cancelBaseChange k Λ T e).symm (t ⊗ₜ n) = t ⊗ₜ e (1 ⊗ₜ n) := (rfl)
 
 @[simp]
-theorem cancelBaseChange_symm_tmul (e : S ⊗[R] N ≃ₗ[S ⊗[k] Λ] M) (t : T) (s : S) (n : N) :
-    (cancelBaseChange k Λ T e).symm (t ⊗ₜ e (s ⊗ₜ n)) = (s • t) ⊗ₜ n := by
+theorem cancelBaseChange_tmul (e : S ⊗[R] N ≃ₗ[S ⊗[k] Λ] M) (t : T) (s : S) (n : N) :
+    cancelBaseChange k Λ T e (t ⊗ₜ e (s ⊗ₜ n)) = (s • t) ⊗ₜ n := by
   have he : e (s ⊗ₜ n) = s • e (1 ⊗ₜ n) := by
     simpa [TensorProduct.smul_tmul'] using
       _root_.map_smul (e.restrictScalars S) s ((1 : S) ⊗ₜ[R] n)
-  rw [LinearEquiv.symm_apply_eq, cancelBaseChange_tmul, he, TensorProduct.smul_tmul]
+  rw [← LinearEquiv.eq_symm_apply, cancelBaseChange_symm_tmul, he, TensorProduct.smul_tmul]
 
 end Cancel
 
