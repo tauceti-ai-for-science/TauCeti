@@ -19,7 +19,8 @@ Let `C` be a classical relative CW complex with base `D` in a Hausdorff space, a
 with its quotient topology. This file shows
 that it is a relative CW complex over `Z`, whose cells are those of `C`:
 
-* the inclusion `Z → Z ∪_a C` is a closed embedding (`TauCeti.isClosedEmbedding_pushout_inl`);
+* the inclusion `Z → Z ∪_a C` is a closed embedding
+  (`TauCeti.isClosedEmbedding_adjunctionSpace_inl`);
 * `Z ∪_a C` is Hausdorff when `Z` is (`TauCeti.t2Space_adjunctionSpace`);
 * `Z ∪_a C` is a classical relative CW complex relative to the image of `Z`
   (`TauCeti.relativeCWPushout`), whose `n`-cells are the `n`-cells of `C`
@@ -70,7 +71,7 @@ noncomputable def pushoutRelativeCWComplex :
   (toRelativeCWComplex C).ofIsPushout (IsPushout.of_hasPushout _ _)
 
 /-- **The inclusion of `Z` into the adjunction space `Z ∪_a C` is a closed embedding.** -/
-theorem isClosedEmbedding_pushout_inl :
+theorem isClosedEmbedding_adjunctionSpace_inl :
     IsClosedEmbedding (pushout.inl (TopCat.ofHom a) (baseInclusion C)) :=
   (pushoutRelativeCWComplex C a).isClosedEmbedding
 

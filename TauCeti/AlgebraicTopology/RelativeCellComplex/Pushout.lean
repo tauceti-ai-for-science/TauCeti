@@ -89,12 +89,18 @@ lemma ofIsPushoutCellsEquiv_symm_mk (j : J) (hj : ¬IsMax j) (k : (c.attachCells
 
 /-- The inclusion of a cell of the cobase change of a relative cell complex is the inclusion of
 the corresponding cell of the original complex followed by `b`. -/
+@[simp, reassoc]
 lemma ofIsPushout_cells_ι (γ : c.Cells) :
     ((c.ofIsPushoutCellsEquiv sq).symm γ).ι = γ.ι ≫ b := by
   obtain ⟨j, hj, k⟩ := γ
-  dsimp only [ofIsPushoutCellsEquiv_symm_mk]
-  dsimp only [RelativeCellComplex.Cells.ι, RelativeCellComplex.Cells.i, ofIsPushout,
-    AttachCells.ofIsPushout]
-  simp [AttachCells.cell]
+  -- The cell attachments of the cobase change are `AttachCells.ofIsPushout` of those of `c`,
+  -- whose cell inclusions are given by `ofIsPushout_cell`. The index `k` only has the right type
+  -- up to unfolding `ofIsPushout`, which `rw` and `simp` reject, so the proof is a term.
+  exact ((c.attachCells j hj).ofIsPushout_cell_assoc
+    (c.toTransfiniteCompositionOfShape.isPushout_pushoutStage_map a
+      (homOfLE (Order.le_succ j))) k _).trans <| (Category.assoc _ _ _).trans <|
+    ((c.attachCells j hj).cell k ≫=
+      c.toTransfiniteCompositionOfShape.inl_ofIsPushout_incl_app sq (Order.succ j)).trans
+      (Category.assoc _ _ _).symm
 
 end HomotopicalAlgebra.RelativeCellComplex
