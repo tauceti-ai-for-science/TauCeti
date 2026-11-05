@@ -38,6 +38,8 @@ does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`: conversely, the norm of `iteratedFDeriv`
+  is bounded by the coordinate derivatives along all words of the same length.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
@@ -116,6 +118,49 @@ theorem norm_coordinateDeriv_le (α : List (Fin n)) {f : CoordinateSpace n → A
   rw [coordinateDeriv_eq_iteratedFDeriv α hf]
   refine ((iteratedFDeriv ℝ α.length f x).le_opNorm _).trans (le_of_eq ?_)
   simp
+
+/-- A coordinate derivative of a `C^k` function along the word of a map `w : Fin k → Fin n` is its
+`k`-th Fréchet derivative evaluated on the standard basis vectors `e_{w 0}, …, e_{w (k-1)}`. -/
+theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (w : Fin k → Fin n)
+    {f : CoordinateSpace n → A} (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    coordinateDeriv (List.ofFn w) f x =
+      iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (w i) 1 := by
+  induction k generalizing x with
+  | zero => simp [Subsingleton.elim (fun i : Fin 0 => EuclideanSpace.single (w i) (1 : ℝ)) 0]
+  | succ k ih =>
+    have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ k f) x :=
+      (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self _)) x
+    rw [List.ofFn_succ, coordinateDeriv_cons,
+      funext (ih (fun i => w i.succ) (hf.of_le (by exact_mod_cast Nat.le_succ _))),
+      fderiv_continuousMultilinear_apply_const_apply hd]
+    exact (iteratedFDeriv_succ_apply_left (𝕜 := ℝ) (f := f) (x := x) (n := k)
+      fun i => EuclideanSpace.single (w i) 1).symm
+
+/-- A continuous multilinear map on `ℝⁿ` is bounded by the sum of the norms of its values on all
+families of standard basis vectors. -/
+theorem _root_.ContinuousMultilinearMap.norm_le_sum_norm_apply_single {k : ℕ}
+    (f : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A) :
+    ‖f‖ ≤ ∑ w : Fin k → Fin n, ‖f fun i => EuclideanSpace.single (w i) 1‖ := by
+  refine f.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
+  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
+    funext i
+    simpa [EuclideanSpace.basisFun_apply] using
+      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
+  nth_rw 1 [hv]
+  rw [f.map_sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun w _ => ?_)
+  rw [f.map_smul_univ, norm_smul, mul_comm, norm_prod]
+  refine mul_le_mul_of_nonneg_left (Finset.prod_le_prod₀ (fun _ _ => norm_nonneg _)
+    fun i _ => ?_) (norm_nonneg _)
+  simpa using PiLp.norm_apply_le (v i) (w i)
+
+/-- The norm of the `k`-th Fréchet derivative of a `C^k` function on `ℝⁿ` is bounded by the sum
+of the norms of its coordinate derivatives along all words of length `k`. -/
+theorem norm_iteratedFDeriv_le_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k f x‖ ≤ ∑ w : Fin k → Fin n, ‖coordinateDeriv (List.ofFn w) f x‖ := by
+  simpa only [coordinateDeriv_ofFn_eq_iteratedFDeriv _ hf] using
+    (iteratedFDeriv ℝ k f x).norm_le_sum_norm_apply_single
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
@@ -350,6 +395,35 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     have hy' : (fun η => a (y, η)) = 0 := funext hy
     rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
   rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+
+/-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function at `(x, ξ)`. -/
+theorem _root_.Filter.EventuallyEq.mixedDeriv {x ξ : CoordinateSpace n} (h : a =ᶠ[nhds (x, ξ)] b)
+    (α β : List (Fin n)) : mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  obtain ⟨U, hU, V, hV, hUV⟩ := Filter.mem_prod_iff.1 (nhds_prod_eq (x := x) (y := ξ) ▸ h)
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [hU] with y hy
+    refine (Filter.EventuallyEq.coordinateDeriv ?_ β).eq_of_nhds
+    filter_upwards [hV] with η hη
+    exact hUV (Set.mk_mem_prod hy hη)
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
+/-- The mixed derivative of a finite sum of smooth functions is the sum of their mixed
+derivatives. -/
+theorem mixedDeriv_sum {ι : Type*} (s : Finset ι)
+    {f : ι → CoordinateSpace n × CoordinateSpace n → A}
+    (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i)) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ∑ i ∈ s, f i p) x ξ = ∑ i ∈ s, mixedDeriv α β (f i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact mixedDeriv_zero α β x ξ
+  | insert i s hi ih =>
+    simp_rw [Finset.sum_insert hi]
+    rw [← ih fun j hj => hf j (Finset.mem_insert_of_mem hj)]
+    exact mixedDeriv_add (hf i (Finset.mem_insert_self i s))
+      (ContDiff.sum fun j hj => hf j (Finset.mem_insert_of_mem hj)) α β x ξ
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 
