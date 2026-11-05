@@ -172,17 +172,9 @@ theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 +
     (u : 𝓢(E, V)) :
     ‖quantizeSchwartzValue a u x‖ ≤
       C * ∫ ζ, (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ := by
-  have hint : Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) :=
-    ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
-      ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
-        fun ζ ↦ Or.inl (by positivity : (1 : ℝ) + ‖(2 * π) • ζ‖ ^ 2 ≠ 0)).mul
-          (𝓕 u).continuous.norm).aestronglyMeasurable)
-      (ae_of_all _ fun ζ ↦ by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact (𝓕 u).one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
-          (volume : Measure E).integrablePower ζ)
   rw [quantizeSchwartzValue_def, ← integral_const_mul]
-  exact norm_integral_le_of_norm_le (hint.const_mul C)
+  exact norm_integral_le_of_norm_le
+    (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m).const_mul C)
     (ae_of_all _ (norm_integrand_le hC (𝓕 u)))
 
 private lemma integral_integrand_add (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
