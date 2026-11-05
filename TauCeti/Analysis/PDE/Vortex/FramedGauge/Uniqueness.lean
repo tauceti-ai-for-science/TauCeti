@@ -45,6 +45,18 @@ namespace TauCeti.Vortex
 open Complex Filter
 open scoped Topology ContDiff
 
+/-- An end framing `α (z) · phase (z) → 1` with `|phase| = 1` near infinity gives `|α|² → 1`,
+written in the field components as `4 (p² + q²) → 1`. -/
+private theorem tendsto_sq_norm_sectionValue_of_tendsto_mul {v : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {phase : ℂ → ℂ} (hphase : ∀ᶠ z in cocompact ℂ, ‖phase z‖ = 1)
+    (hv : Tendsto (fun z ↦ sectionValue v z * phase z) (cocompact ℂ) (𝓝 1)) :
+    Tendsto (fun z ↦ 4 * (v z 2 ^ 2 + v z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
+  have hn := hv.norm.pow 2
+  simp only [norm_one, one_pow] at hn
+  apply hn.congr'
+  filter_upwards [hphase] with z hz
+  rw [norm_mul, hz, mul_one, sq_norm_sectionValue]
+
 /-- Two classical plane vortices with a common unit-modulus end phase and sections related
 by a smooth nowhere-zero factor are related by a unique smooth framed gauge. The zero set
 of the second section is required to have empty interior. This theorem does not construct
@@ -68,19 +80,11 @@ theorem existsUnique_framedGauge_of_forall_section_eq_mul
     simp only [sectionValue_apply] at hz
     linear_combination hz / 2
   -- A common unit end phase supplies both modulus limits used by the maximum principle.
-  have hmod (v : ℂ → EuclideanSpace ℝ (Fin 4))
-      (hv : Tendsto (fun z ↦ sectionValue v z * phase z) (cocompact ℂ) (𝓝 1)) :
-      Tendsto (fun z ↦ 4 * (v z 2 ^ 2 + v z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    have hn := hv.norm.pow 2
-    simp only [norm_one, one_pow] at hn
-    apply hn.congr'
-    filter_upwards [hphase] with z hz
-    rw [norm_mul, hz, mul_one, Complex.sq_norm, sectionValue_apply, normSq_mul,
-      normSq_ofNat, normSq_add_mul_I]
-    ring
   obtain ⟨f, hf, hfactor, hfields⟩ :=
     exists_eq_phaseGauge_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq
-      hxsol hysol (hmod x hxlim) (hmod y hylim) (hh.of_le (by simp)) hh₀ hα' hdense
+      hxsol hysol (tendsto_sq_norm_sectionValue_of_tendsto_mul hphase hxlim)
+      (tendsto_sq_norm_sectionValue_of_tendsto_mul hphase hylim) (hh.of_le (by simp)) hh₀ hα'
+      hdense
   let u : ℂ → Circle := fun z ↦ Circle.exp (f z)
   have hucoe (z : ℂ) : (u z : ℂ) = h z := (hfactor z).symm
   -- The ratio of the two framed sections tends to one, independently of a real lift.
@@ -127,21 +131,11 @@ theorem existsUnique_framedGaugeGroup_smul_eq {x y : ℂ → EuclideanSpace ℝ 
   obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
     (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
   -- The end framing gives `|α_y| → 1`, so the zeros of `α_y` are finite.
-  have hymod : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    have hn := hylim.norm.pow 2
-    simp only [norm_one, one_pow] at hn
-    apply hn.congr'
-    filter_upwards [hphase] with z hz
-    rw [norm_mul, hz, mul_one, Complex.sq_norm, sectionValue_apply, normSq_mul,
-      normSq_ofNat, normSq_add_mul_I]
-    ring
   have hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} := by
     refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top
-      (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hymod)).mono fun z hz ↦ ?_
-    intro h0
-    have h2 : y z 2 = 0 := by nlinarith [sq_nonneg (y z 2), sq_nonneg (y z 3)]
-    have h3 : y z 3 = 0 := by nlinarith [sq_nonneg (y z 2), sq_nonneg (y z 3)]
-    exact hz.2 (by simp [sectionValue_apply, h2, h3])
+      (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol
+      (tendsto_sq_norm_sectionValue_of_tendsto_mul hphase hylim))).mono fun z hz h0 ↦ ?_
+    exact hz.2 (by simpa [h0] using sq_norm_sectionValue y z)
   obtain ⟨u, ⟨-, hu⟩, -⟩ := existsUnique_framedGauge_of_forall_section_eq_mul (hd _ (hxi 0))
     (hd _ (hxi 1)) (contDiff_infty.1 (hxi 2) 2) (contDiff_infty.1 (hxi 3) 2) (hd _ (hyi 0))
     (hd _ (hyi 1)) (contDiff_infty.1 (hyi 2) 2) (contDiff_infty.1 (hyi 3) 2) hxsol hysol hphase
