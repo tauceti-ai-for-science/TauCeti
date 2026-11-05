@@ -683,18 +683,16 @@ private theorem monotone_preimage_truncation :
 /-- The truncations of `S`, in real coordinates, exhaust `S`. -/
 private theorem iUnion_preimage_truncation :
     ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1} := by
+      thricePuncturedSphereReal := by
   rw [← preimage_iUnion, iUnion_truncation]
-  rfl
+  ext z
+  simp [mem_thricePuncturedSphereReal_iff]
 
 /-- Integrals over `S` are the limits of the integrals over its truncations. -/
 private theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
-    (hf : IntegrableOn f {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1}) :
+    (hf : IntegrableOn f thricePuncturedSphereReal) :
     Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
-      (𝓝 (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, f z)) := by
+      (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
   rw [← iUnion_preimage_truncation] at hf ⊢
   exact tendsto_setIntegral_of_monotone (fun R =>
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
@@ -706,18 +704,16 @@ integrable over `S`. -/
 theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContinuousOn u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1}) :
+    (hu : ContinuousOn u thricePuncturedSphereReal) :
     IntegrableOn (fun z ↦ ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z))
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1} :=
-  ⟨(ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedSphere hu
+      thricePuncturedSphereReal :=
+  ⟨(ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu
       (contDiffOn_pairOfPantsPerturbation hH hHs 1)
       (contDiffOn_pairOfPantsPerturbation hH hHs Complex.I)).aestronglyMeasurable
-      isOpen_puncturedSphere.measurableSet,
+      isOpen_thricePuncturedSphereReal.measurableSet,
     (setLIntegral_le_lintegral _ _).trans_lt
       ((lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u).trans_lt
         (ENNReal.sum_lt_top.2 fun _ _ => ENNReal.ofReal_lt_top))⟩
@@ -728,8 +724,7 @@ as `R → ∞`, then the integrals of a bounded continuous Hamiltonian along the
 integral along `x`. -/
 private theorem tendsto_intervalIntegral_endLoop (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContinuousOn u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1}) {q : Puncture} {x : ℝ → V}
+    (hu : ContinuousOn u thricePuncturedSphereReal) {q : Puncture} {x : ℝ → V}
     (hx : ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x t))) :
     Tendsto (fun R : ℝ ↦ ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
@@ -742,11 +737,9 @@ private theorem tendsto_intervalIntegral_endLoop (hHs : ∀ q, ContDiff ℝ 1 (u
     (ae_of_all _ fun t _ ↦ (hHc.tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hx t)))
   -- For `R > 0` the circle `±s = R` lies in `S`, where `u` is continuous.
   filter_upwards [eventually_gt_atTop 0] with R hR
-  have hmem (t : ℝ) : Complex.equivRealProdCLM.symm (Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))) ≠ 0 ∧
-      Complex.equivRealProdCLM.symm (Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))) ≠ 1 := by
-    rw [ContinuousLinearEquiv.symm_apply_apply]
+  have hmem (t : ℝ) : Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)) ∈ thricePuncturedSphereReal := by
+    rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
     refine cylindricalEndLift_ne_zero_and_ne_one q ?_
     rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
   have hloop : Continuous fun t : ℝ ↦ u (Complex.equivRealProdCLM
@@ -770,29 +763,25 @@ boundary integral `∫_∂ K(u)` at the asymptotic orbits, and the curvature ter
 theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1})
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {x : Puncture → ℝ → V}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1})
+      thricePuncturedSphereReal)
     (hA : IntegrableOn
       (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag))
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}) :
-    ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.floerEnergyDensity
+      thricePuncturedSphereReal) :
+    ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z =
-      (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-          Complex.equivRealProdCLM.symm z ≠ 1},
+      (∫ z in thricePuncturedSphereReal,
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
         (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) -
-        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-          Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
@@ -818,25 +807,22 @@ asymptotic orbits, by at most `B₀ + B₁ + B_∞`. -/
 theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1})
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {x : Puncture → ℝ → V}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1})
+      thricePuncturedSphereReal)
     (hA : IntegrableOn
       (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag))
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}) :
-    |(∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.floerEnergyDensity
+      thricePuncturedSphereReal) :
+    |(∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) -
-      (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-          Complex.equivRealProdCLM.symm z ≠ 1},
+      (∫ z in thricePuncturedSphereReal,
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)| ≤ ∑ q, B q := by
   have hsub (a b c : ℝ) : a + b - c - a - b = -c := by ring
@@ -851,34 +837,30 @@ orbits is at least `-(B₀ + B₁ + B_∞)`. -/
 theorem neg_sum_le_integral_add_sum_of_isComplexLinearMap (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1})
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {x : Puncture → ℝ → V}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1})
+      thricePuncturedSphereReal)
     (hA : IntegrableOn
       (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag))
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1})
+      thricePuncturedSphereReal)
     {J : ℝ × ℝ → AlmostComplexStructure V}
-    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
-    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1},
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedFDeriv
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z : ℝ × ℝ →ₗ[ℝ] V)) :
     -∑ q, B q ≤
-      (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-          Complex.equivRealProdCLM.symm z ≠ 1},
+      (∫ z in thricePuncturedSphereReal,
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
-  have hpos := setIntegral_nonneg (μ := volume) isOpen_puncturedSphere.measurableSet
+  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
     fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have h := abs_le.1
     (abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le ω hH hHs hB hu hx hE hA)
