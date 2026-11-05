@@ -38,8 +38,10 @@ correction `ω(A)` of a product coefficient vanishes.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
-  identity on the pair of pants.
+* `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_eq_sum_hamiltonianAction`:
+  the energy identity on the pair of pants in terms of the limiting actions on the ends. The
+  identity in terms of `∫_S u^*ω` and the asymptotic orbits is
+  `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
 
 ## References
 
@@ -604,8 +606,8 @@ period-one `C¹` Hamiltonians `H_q` on the ends of `S = ℂ ∖ {0, 1}`, with co
 `t ↦ u(φ_q(s, t))` tend to `A_q` as `±s → ∞`. Then the energy of `u` is
 `E = A₀ + A₁ - A_∞ - ∫ R_K(u)`: the actions at the two positive (input) ends minus the action at
 the negative (output) end, minus the integrated curvature. -/
-theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+theorem integral_floerEnergyDensity_pairOfPantsPerturbation_eq_sum_hamiltonianAction
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
     (hE : Integrable (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
