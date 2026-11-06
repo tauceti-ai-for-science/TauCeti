@@ -100,6 +100,11 @@ lemma mem_orthogonal_iff' {x : V} : x ∈ ω.orthogonal L ↔ ∀ y ∈ L, ω x 
 lemma orthogonal_le (h : L ≤ L') : ω.orthogonal L' ≤ ω.orthogonal L :=
   ω.toBilinForm.orthogonal_le h
 
+/-- The complement of a sum is the intersection of the complements. -/
+lemma orthogonal_sup (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
+    ω.orthogonal (L ⊔ L') = ω.orthogonal L ⊓ ω.orthogonal L' :=
+  Submodule.orthogonalBilin_sup L L'
+
 /-- A subspace is contained in the complement of its complement. -/
 lemma le_orthogonal_orthogonal : L ≤ ω.orthogonal (ω.orthogonal L) :=
   ω.toBilinForm.le_orthogonal_orthogonal ω.isRefl

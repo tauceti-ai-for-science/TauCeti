@@ -33,6 +33,12 @@ Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and 
 embedded case, where `h` is a Lagrangian correspondence `M₁ ⇝ M₃`, is in
 `TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition`.
 
+When moreover `f` and `g` have injective differentials and their middle coordinates are
+transverse over `M₂`, the composition has no excess, so the composite has injective differential
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.injective_mfderiv_relComp`). The
+transverse fibre product, which is a manifold, is treated in
+`TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Transverse`.
+
 The composite of the graphs of maps `φ : M₁ → M₂` and `ψ : M₂ → M₃` is the graph of `ψ ∘ φ`,
 presented by `C = M₁`, `a = id` and `b = φ`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_graph_comp`).
@@ -159,6 +165,105 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
       ← mfderiv_comp_apply c (hf (a c)) (ha c), ← mfderiv_comp_apply c (hg (b c)) (hb c)]
     exact hfa.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hgb hab ξ
   · rwa [hA, hB] at h
+
+omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₃] in
+/-- Linear form of the no-excess theorem at tangent spaces of `M₂` at two points that are equal
+but not syntactically so. If the canonical relations `range A` and `range B` are transverse over
+the middle space, a vector of `range A` with zero first coordinate and a vector of `range B` with
+zero second coordinate whose middle coordinates agree both vanish. -/
+private theorem eq_zero_of_isLagrangian_range_of_eq {x₁ : M₁} {y y' : M₂} {x₃ : M₃}
+    (hy : y = y') {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
+    {A : X →ₗ[ℝ] TangentSpace I₁ x₁ × TangentSpace I₂ y}
+    {B : Y →ₗ[ℝ] TangentSpace I₂ y' × TangentSpace I₃ x₃}
+    (hA : ((hσ₁.symplecticFormAt x₁).twistedProd (hσ₂.symplecticFormAt y)).IsLagrangian
+      (LinearMap.range A))
+    (hB : ((hσ₂.symplecticFormAt y').twistedProd (hσ₃.symplecticFormAt x₃)).IsLagrangian
+      (LinearMap.range B))
+    (htrans : LinearMap.range (LinearMap.snd ℝ _ _ ∘ₗ A) ⊔
+      LinearMap.range ((tangentSpaceCast I₂ y' y).toLinearMap ∘ₗ LinearMap.fst ℝ _ _ ∘ₗ B) = ⊤)
+    {u : X} {w : Y} (hu : (A u).1 = 0) (hw : (B w).2 = 0) (huw : (A u).2 = (B w).1) :
+    A u = 0 ∧ B w = 0 := by
+  subst hy
+  -- The cast between the tangent spaces at syntactically equal points is the identity.
+  have hcast : (tangentSpaceCast I₂ y y).toLinearMap = LinearMap.id := LinearMap.ext fun _ ↦ rfl
+  rw [hcast, LinearMap.id_comp, LinearMap.range_comp, LinearMap.range_comp] at htrans
+  have hmem : (A u).2 ∈ (LinearMap.range A).comap (LinearMap.inr ℝ _ _) ⊓
+      (LinearMap.range B).comap (LinearMap.inl ℝ _ _) :=
+    ⟨⟨u, Prod.ext hu rfl⟩, ⟨w, Prod.ext huw.symm hw⟩⟩
+  rw [(hA.comap_inr_inf_comap_inl_eq_bot_iff hB).mpr htrans, Submodule.mem_bot] at hmem
+  exact ⟨Prod.ext hu hmem, Prod.ext (huw.symm.trans hmem) hw⟩
+
+omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₃] in
+/-- **Transverse composition has no excess.** Under the hypotheses of `IsLagrangianMap.relComp`,
+suppose moreover that at `c` the maps `f` and `g` have injective differentials, that `(da, db)` is
+injective, and that the second coordinate of `f` and the first coordinate of `g` are transverse
+over `M₂`. Then the composite `c ↦ ((f (a c)).1, (g (b c)).2)` has injective differential at `c`.
+
+The kernel of the differential consists of the matched pairs `((0, y), (y, 0))` of tangent
+vectors of the two relations, and transversality kills it
+(`TauCeti.SymplecticForm.IsLagrangian.comap_inr_inf_comap_inl_eq_bot_iff`). -/
+theorem IsLagrangianMap.injective_mfderiv_relComp
+    (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
+    (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g) (hf : MDifferentiable K₁ (I₁.prod I₂) f)
+    (hg : MDifferentiable K₂ (I₂.prod I₃) g) (ha : MDifferentiable KC K₁ a)
+    (hb : MDifferentiable KC K₂ b) (hab : ∀ c, (f (a c)).2 = (g (b c)).1) {c : C}
+    (hfi : Function.Injective (mfderiv K₁ (I₁.prod I₂) f (a c)))
+    (hgi : Function.Injective (mfderiv K₂ (I₂.prod I₃) g (b c)))
+    (habi : ∀ ξ, mfderiv KC K₁ a c ξ = 0 → mfderiv KC K₂ b c ξ = 0 → ξ = 0)
+    (htrans : (mfderiv K₁ I₂ (fun x ↦ (f x).2) (a c)).range ⊔
+      (((tangentSpaceCast I₂ (g (b c)).1 (f (a c)).2).toContinuousLinearMap).comp
+        (mfderiv K₂ I₂ (fun y ↦ (g y).1) (b c))).range = ⊤) :
+    Function.Injective (mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c) := by
+  let A := (Manifold.tangentSpaceProdEquiv (f (a c))).toLinearEquiv.toLinearMap ∘ₗ
+    (mfderiv K₁ (I₁.prod I₂) f (a c)).toLinearMap
+  let B := (Manifold.tangentSpaceProdEquiv (g (b c))).toLinearEquiv.toLinearMap ∘ₗ
+    (mfderiv K₂ (I₂.prod I₃) g (b c)).toLinearMap
+  -- `A` and `B` only change the types of tangent vectors.
+  have hA : ∀ u, A u = mfderiv K₁ (I₁.prod I₂) f (a c) u :=
+    fun u ↦ Manifold.tangentSpaceProdEquiv_apply _ _
+  have hB : ∀ w, B w = mfderiv K₂ (I₂.prod I₃) g (b c) w :=
+    fun w ↦ Manifold.tangentSpaceProdEquiv_apply _ _
+  have hfa : MDifferentiableAt KC (I₁.prod I₂) (f ∘ a) c := (hf (a c)).comp c (ha c)
+  have hgb : MDifferentiableAt KC (I₂.prod I₃) (g ∘ b) c := (hg (b c)).comp c (hb c)
+  have hh : MDifferentiableAt KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c :=
+    hfa.fst.prodMk hgb.snd
+  -- The middle projections of `A` and `B` are the differentials of the middle coordinates.
+  have hAsnd : LinearMap.snd ℝ _ _ ∘ₗ A = (mfderiv K₁ I₂ (fun x ↦ (f x).2) (a c)).toLinearMap :=
+    LinearMap.ext fun u ↦ by
+      rw [LinearMap.comp_apply, hA, ContinuousLinearMap.coe_coe, (hf (a c)).mfderiv_snd_apply]
+      rfl
+  have hBfst : (tangentSpaceCast I₂ (g (b c)).1 (f (a c)).2).toLinearMap ∘ₗ
+      LinearMap.fst ℝ _ _ ∘ₗ B =
+      (((tangentSpaceCast I₂ (g (b c)).1 (f (a c)).2).toContinuousLinearMap).comp
+        (mfderiv K₂ I₂ (fun y ↦ (g y).1) (b c))).toLinearMap :=
+    LinearMap.ext fun w ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, hB, ContinuousLinearMap.coe_coe,
+        ContinuousLinearMap.comp_apply, (hg (b c)).mfderiv_fst_apply]
+      rfl
+  rw [injective_iff_map_eq_zero]
+  intro ξ hξ
+  -- The two outer coordinates of the differential of the composite vanish.
+  have hu : (A (mfderiv KC K₁ a c ξ)).1 = 0 := by
+    rw [hA, ← mfderiv_comp_apply c (hf (a c)) (ha c), ← hfa.mfderiv_fst_apply]
+    refine (hh.mfderiv_fst_apply ξ).trans ?_
+    rw [hξ]
+    rfl
+  have hw : (B (mfderiv KC K₂ b c ξ)).2 = 0 := by
+    rw [hB, ← mfderiv_comp_apply c (hg (b c)) (hb c), ← hgb.mfderiv_snd_apply]
+    refine (hh.mfderiv_snd_apply ξ).trans ?_
+    rw [hξ]
+    rfl
+  have huw : (A (mfderiv KC K₁ a c ξ)).2 = (B (mfderiv KC K₂ b c ξ)).1 := by
+    rw [hA, hB, ← mfderiv_comp_apply c (hf (a c)) (ha c),
+      ← mfderiv_comp_apply c (hg (b c)) (hb c)]
+    exact hfa.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hgb hab ξ
+  obtain ⟨hAu, hBw⟩ := eq_zero_of_isLagrangian_range_of_eq (hσ₂ := hσ₂) (hab c)
+    ((isLagrangianMap_twistedProd_iff_forall hσ₁ hσ₂).mp hfL (a c))
+    ((isLagrangianMap_twistedProd_iff_forall hσ₂ hσ₃).mp hgL (b c))
+    (by rw [hAsnd, hBfst]; exact htrans) hu hw huw
+  rw [hA] at hAu
+  rw [hB] at hBw
+  exact habi ξ (hfi (hAu.trans (map_zero _).symm)) (hgi (hBw.trans (map_zero _).symm))
 
 /-- **Composition of graphs.** If the graphs of smooth maps `φ : M₁ → M₂` and `ψ : M₂ → M₃` are
 Lagrangian for the twisted products, so is the graph of `ψ ∘ φ`. This is the composite of the two

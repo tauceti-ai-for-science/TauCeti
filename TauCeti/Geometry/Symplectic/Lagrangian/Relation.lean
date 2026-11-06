@@ -22,6 +22,15 @@ This is the tangent-space calculation for geometric composition of smooth
 Lagrangian correspondences. It does not supply smoothness or embeddedness of a
 set-theoretic geometric composite.
 
+The **excess** of the composition consists of the middle vectors `y` with `(0, y) ∈ L` and
+`(y, 0) ∈ K`: the matched pairs `((0, y), (y, 0))` are exactly the matched pairs with zero image
+in `L.relComp K`. For Lagrangian relations the excess is the symplectic complement of the sum of
+the projections of `L` and `K` to the middle space
+(`TauCeti.SymplecticForm.IsLagrangian.comap_inr_inf_comap_inl`). In finite dimension it is
+therefore zero exactly when `L` and `K` are transverse over the middle space
+(`TauCeti.SymplecticForm.IsLagrangian.comap_inr_inf_comap_inl_eq_bot_iff`); this is why a
+transverse composite of Lagrangian immersions is again an immersion.
+
 The proof intersects the product relation with the matching subspace, then
 eliminates its characteristic directions. Orthogonal complementation exchanges
 intersection and sum, so no transversality or dimension-of-intersection assumption
@@ -122,5 +131,57 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
     exact add_right_cancel (h₁.trans h₂.symm)
   apply Submodule.mem_relComp.mpr
   exact ⟨a.1.2, hav ▸ ha.1, hau ▸ haw ▸ ha.2⟩
+
+/-! ### The excess of a composition -/
+
+/-- For a Lagrangian relation `L ⊆ V × W`, the vectors `y` with `(0, y) ∈ L` form the
+`ω₂`-complement of the projection of `L` to `W`. -/
+theorem IsLagrangian.comap_inr_eq_orthogonal_map_snd
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L) :
+    L.comap (LinearMap.inr ℝ V W) = ω₂.orthogonal (L.map (LinearMap.snd ℝ V W)) := by
+  ext y
+  simp only [Submodule.mem_comap, LinearMap.inr_apply, mem_orthogonal_iff, Submodule.mem_map,
+    LinearMap.snd_apply, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun hy p hp ↦ ?_, fun hy ↦ isCoisotropic_iff.mp hL.isCoisotropic _ ?_⟩
+  · simpa using hL.symplecticForm_apply_eq_zero hp hy
+  · rw [mem_orthogonal_iff]
+    intro p hp
+    simp [hy p hp]
+
+/-- For a Lagrangian relation `K ⊆ W × U`, the vectors `y` with `(y, 0) ∈ K` form the
+`ω₂`-complement of the projection of `K` to `W`. -/
+theorem IsLagrangian.comap_inl_eq_orthogonal_map_fst
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    K.comap (LinearMap.inl ℝ W U) = ω₂.orthogonal (K.map (LinearMap.fst ℝ W U)) := by
+  ext y
+  simp only [Submodule.mem_comap, LinearMap.inl_apply, mem_orthogonal_iff, Submodule.mem_map,
+    LinearMap.fst_apply, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun hy p hp ↦ ?_, fun hy ↦ isCoisotropic_iff.mp hK.isCoisotropic _ ?_⟩
+  · simpa using hK.symplecticForm_apply_eq_zero hp hy
+  · rw [mem_orthogonal_iff]
+    intro p hp
+    simp [hy p hp]
+
+/-- **The excess of a composition of Lagrangian relations.** The middle vectors `y` with
+`(0, y) ∈ L` and `(y, 0) ∈ K` are the matched pairs `((0, y), (y, 0))` lost when the middle
+coordinate is eliminated, that is, the kernel of the projection from the matched pairs onto
+`L.relComp K`. They form the `ω₂`-complement of the sum of the projections of `L` and `K` to the
+middle space `W`. -/
+theorem IsLagrangian.comap_inr_inf_comap_inl (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    L.comap (LinearMap.inr ℝ V W) ⊓ K.comap (LinearMap.inl ℝ W U) =
+      ω₂.orthogonal (L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)) := by
+  rw [hL.comap_inr_eq_orthogonal_map_snd, hK.comap_inl_eq_orthogonal_map_fst, orthogonal_sup]
+
+/-- **Transverse composition has no excess.** In finite dimension, the composition of two
+Lagrangian relations has no excess directions exactly when the relations are transverse over the
+middle space, that is, when their projections to `W` span `W`. -/
+theorem IsLagrangian.comap_inr_inf_comap_inl_eq_bot_iff [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L) (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    L.comap (LinearMap.inr ℝ V W) ⊓ K.comap (LinearMap.inl ℝ W U) = ⊥ ↔
+      L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ := by
+  rw [hL.comap_inr_inf_comap_inl hK]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, orthogonal_top]⟩
+  rw [← ω₂.orthogonal_orthogonal (_ ⊔ _), h, orthogonal_bot]
 
 end TauCeti.SymplecticForm
