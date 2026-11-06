@@ -11,8 +11,10 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Fourier atoms
@@ -27,6 +29,8 @@ It uses Mathlib's `2π` Fourier convention.
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
 * `TauCeti.contDiff_fourierAtom`: Fourier atoms are smooth in the spatial variable.
+* `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the derivatives of order `i` of the atom at
+  frequency `q` are bounded by `(2π ‖q‖) ^ i`.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -133,6 +137,35 @@ theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
     ((Complex.ofRealCLM.contDiff.comp
       (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
         contDiff_const)
+
+/-- The Fourier atom at frequency `q` is the exponential of a real-linear map of norm at most
+`2π ‖q‖`, so its derivatives of order `i` are bounded by `(2π ‖q‖) ^ i`. -/
+theorem norm_iteratedFDeriv_fourierAtom_le (q x : W) (i : ℕ) :
+    ‖iteratedFDeriv ℝ i (fourierAtom q) x‖ ≤ (2 * Real.pi * ‖q‖) ^ i := by
+  set L : W →L[ℝ] ℂ := (-2 * Real.pi * Complex.I : ℂ) • (Complex.ofRealCLM.comp (innerSL ℝ q))
+  have hL : fourierAtom q = Complex.exp ∘ L := by
+    funext v
+    simp [L, real_inner_comm q v]
+  have hLn : ‖L‖ ≤ 2 * Real.pi * ‖q‖ := by
+    calc ‖L‖ ≤ ‖(-2 * Real.pi * Complex.I : ℂ)‖ * ‖Complex.ofRealCLM.comp (innerSL ℝ q)‖ :=
+          ContinuousLinearMap.opNorm_smul_le _ _
+      _ ≤ 2 * Real.pi * (‖Complex.ofRealCLM‖ * ‖innerSL ℝ q‖) := by
+          have h2 : ‖(-2 * Real.pi * Complex.I : ℂ)‖ = 2 * Real.pi := by
+            simp [abs_of_pos Real.pi_pos]
+          rw [h2]
+          gcongr
+          exact ContinuousLinearMap.opNorm_comp_le _ _
+      _ = 2 * Real.pi * ‖q‖ := by simp [Complex.ofRealCLM_norm]
+  have hexp (v : W) : ‖Complex.exp (L v)‖ = 1 := by
+    rw [← Function.comp_apply (f := Complex.exp), ← hL, norm_fourierAtom]
+  rw [hL, L.iteratedFDeriv_comp_right (Complex.contDiff_exp (n := ⊤)) x
+    (by exact_mod_cast le_top)]
+  calc _ ≤ ‖iteratedFDeriv ℝ i Complex.exp (L x)‖ * ∏ _ : Fin i, ‖L‖ :=
+        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+    _ = ‖L‖ ^ i := by
+        rw [norm_iteratedFDeriv_real_cexp, hexp, one_mul, Finset.prod_const,
+          Finset.card_univ, Fintype.card_fin]
+    _ ≤ _ := pow_le_pow_left₀ (norm_nonneg _) hLn i
 
 end ContDiff
 

@@ -25,6 +25,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
+* `SchwartzMap.integrable_one_add_norm_pow_mul_norm`: `(1 + ‖x‖) ^ k ‖f x‖` is integrable for
+  every natural `k`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -132,6 +134,18 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
     (.of_forall fun x ↦ ?_)
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
+
+/-- For a Schwartz function `f` and `k : ℕ`, the function `(1 + ‖x‖) ^ k ‖f x‖` is integrable. -/
+theorem integrable_one_add_norm_pow_mul_norm (k : ℕ) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ (1 + ‖x‖) ^ k * ‖f x‖) μ := by
+  -- Expand `(‖x‖ + 1) ^ k` by the binomial theorem.
+  have h : (fun x ↦ (1 + ‖x‖) ^ k * ‖f x‖) =
+      fun x ↦ ∑ m ∈ Finset.range (k + 1), (k.choose m : ℝ) * (‖x‖ ^ m * ‖f x‖) := by
+    funext x
+    rw [add_comm, add_pow, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun m _ ↦ by ring
+  rw [h]
+  exact integrable_finsetSum _ fun m _ ↦ (f.integrable_pow_mul μ m).const_mul _
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function

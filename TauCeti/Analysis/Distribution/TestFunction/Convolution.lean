@@ -13,9 +13,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 # Mollification in the test-function topology
 
 A test function may be convolved with a normalized smooth bump whenever the enlarged support
-stays inside its open domain. Every derivative commutes with this operation. For shrinking
-bumps, the mollifications converge in the native LF topology, so every distribution can be
-evaluated along this approximation.
+stays inside its open domain. Every derivative commutes with this operation, and a uniform bound
+on a derivative survives it. For shrinking bumps, the mollifications converge in the native LF
+topology, so every distribution can be evaluated along this approximation.
 
 The codomain is any real Banach space, including the finite-dimensional spaces of alternating
 forms used to test currents in coordinates.
@@ -104,6 +104,20 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
   rw [coe_mollify, ← hL]
   exact φ.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
     ρ.continuous_normed.locallyIntegrable φ.contDiff (by simp)
+
+/-- Mollification by a normalized bump does not increase a uniform bound on a derivative. -/
+theorem norm_iteratedFDeriv_mollify_le (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E)) (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
+    {n : ℕ} {M : ℝ} (hM : ∀ x, ‖iteratedFDeriv ℝ n (φ : E → F) x‖ ≤ M) (x : E) :
+    ‖iteratedFDeriv ℝ n (mollify φ μ ρ h : E → F) x‖ ≤ M := by
+  rw [iteratedFDeriv_mollify, convolution_def]
+  calc ‖∫ t, lsmul ℝ ℝ (ρ.normed μ t) (iteratedFDeriv ℝ n (φ : E → F) (x - t)) ∂μ‖
+      ≤ ∫ t, ρ.normed μ t * M ∂μ :=
+        norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const M)
+          (Eventually.of_forall fun t => by
+            rw [lsmul_apply, norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed t)]
+            exact mul_le_mul_of_nonneg_left (hM _) (ρ.nonneg_normed t))
+    _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
 variable [CompleteSpace F]
 
