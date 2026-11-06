@@ -32,6 +32,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   compares two real numbers exactly as they compare, and is positive on the positive reals.
 * `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
   `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
+* `Real.range_tanh`, `Real.image_tanh_Ioi_zero` and `Real.image_tanh_Iio_zero` — `Real.tanh` maps
+  the line onto `(-1, 1)`, the positive reals onto `(0, 1)` and the negative reals onto `(-1, 0)`.
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
 * `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
@@ -129,6 +131,26 @@ theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := 
 @[simp]
 theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
   simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
+
+/-- The hyperbolic tangent maps the real line onto the open interval `(-1, 1)`. -/
+@[simp]
+theorem _root_.Real.range_tanh : Set.range Real.tanh = Set.Ioo (-1) 1 := by
+  rw [← Set.image_univ]
+  exact Real.tanh_bijOn.image_eq
+
+/-- The hyperbolic tangent maps the positive reals onto `(0, 1)`. -/
+theorem _root_.Real.image_tanh_Ioi_zero : Real.tanh '' Set.Ioi 0 = Set.Ioo 0 1 := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨Real.artanh y, Real.artanh_pos hy, Real.tanh_artanh ⟨by grind, hy.2⟩⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨by simpa only [Real.tanh_zero] using Real.tanh_strictMono hx, Real.tanh_lt_one x⟩
+
+/-- The hyperbolic tangent maps the negative reals onto `(-1, 0)`. -/
+theorem _root_.Real.image_tanh_Iio_zero : Real.tanh '' Set.Iio 0 = Set.Ioo (-1) 0 := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨Real.artanh y, Real.artanh_neg hy, Real.tanh_artanh ⟨hy.1, by grind⟩⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨Real.neg_one_lt_tanh x, Real.tanh_neg_iff.2 hx⟩
 
 /-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
 positive function `exp x + exp (-x)`. -/
