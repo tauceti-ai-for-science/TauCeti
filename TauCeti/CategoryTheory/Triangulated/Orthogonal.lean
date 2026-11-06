@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
+public import TauCeti.CategoryTheory.ObjectProperty.Orthogonal
 
 /-!
-# Right orthogonality of third vertices of triangles
+# Orthogonality of third vertices of triangles
 
 Let `P` be a class of objects of a pretriangulated category, stable under shifts, and let
 `T : X₁ ⟶ X₂ ⟶ X₃ ⟶ X₁⟦1⟧` be a distinguished triangle. If every morphism from an object of `P`
@@ -16,6 +17,11 @@ to `X₂` factors uniquely through `X₁ ⟶ X₂`, then `X₃` is right orthogo
 long exact sequence of `Hom(K, -)` for objects `K` of `P`: surjectivity at `K` kills the image of
 `Hom(K, X₂)` in `Hom(K, X₃)`, and injectivity at `K⟦-1⟧` kills the connecting map to
 `Hom(K, X₁⟦1⟧)`.
+
+Dually, `T.obj₃` is left orthogonal to `P` if and only if, for every object `K` of `P`, every
+morphism `X₁ ⟶ K` extends uniquely along `X₁ ⟶ X₂`
+(`CategoryTheory.ObjectProperty.leftOrthogonal_obj₃_iff_bijective`), by the long exact sequence
+of `Hom(-, K)`.
 
 This is how one shows that an object built as a cone is orthogonal to a class of objects
 satisfying a lifting property, as for curved modules with projective underlying graded module
@@ -54,5 +60,36 @@ theorem rightOrthogonal_obj₃_of_bijective (T : Triangle C) (hT : T ∈ distTri
   obtain ⟨ψ, rfl⟩ := Triangle.coyoneda_exact₃ T hT φ hφ
   obtain ⟨χ, rfl⟩ := (H K hK).2 ψ
   rw [Category.assoc, comp_distTriang_mor_zero₁₂ T hT, comp_zero]
+
+/-- Let `T` be a distinguished triangle and `P` a shift-stable class of objects. Then `T.obj₃` is
+left orthogonal to `P` if and only if, for every object `K` of `P`, composition with `T.mor₁` is a
+bijection from morphisms `T.obj₂ ⟶ K` to morphisms `T.obj₁ ⟶ K`. -/
+theorem leftOrthogonal_obj₃_iff_bijective (T : Triangle C) (hT : T ∈ distTriang C) :
+    P.leftOrthogonal T.obj₃ ↔
+      ∀ K, P K → Function.Bijective fun f : T.obj₂ ⟶ K ↦ T.mor₁ ≫ f := by
+  refine ⟨fun h K hK ↦ ⟨fun f₁ f₂ hf ↦ ?_, fun χ ↦ ?_⟩, fun H K φ hK ↦ ?_⟩
+  · -- A map killed by `T.mor₁` factors through `T.obj₃`, so it vanishes.
+    rw [← sub_eq_zero]
+    obtain ⟨g, hg⟩ := Triangle.yoneda_exact₂ T hT (f₁ - f₂) (by
+      rw [Preadditive.comp_sub, sub_eq_zero]
+      exact hf)
+    rw [hg, h g hK, comp_zero]
+  · -- A map `T.obj₁ ⟶ K` extends along `T.mor₁` once it vanishes on `T.obj₃⟦-1⟧`, which holds
+    -- since `K⟦1⟧` lies in `P`.
+    have h₀ : ∀ ψ : T.obj₃⟦(-1 : ℤ)⟧ ⟶ K, ψ = 0 :=
+      (forall_shift_hom_eq_zero_iff T.obj₃ K (neg_add_cancel 1)).2 fun ψ ↦
+        h ψ (P.le_shift 1 K hK)
+    obtain ⟨g, hg⟩ := Triangle.yoneda_exact₂ _ (inv_rot_of_distTriang T hT) χ (h₀ _)
+    exact ⟨g, hg.symm⟩
+  · -- A map out of `T.obj₃` vanishing on `T.obj₂` factors through the connecting map, and the
+    -- surjectivity at `K⟦-1⟧` makes that factorization factor through `T.mor₁⟦1⟧'`.
+    obtain ⟨g, rfl⟩ := Triangle.yoneda_exact₃ T hT φ ((H K hK).1 (by
+      simp only [comp_distTriang_mor_zero₁₂_assoc T hT, comp_zero, zero_comp]))
+    let adj := (shiftEquiv C (1 : ℤ)).toAdjunction
+    obtain ⟨h, hh⟩ := (H _ (P.le_shift (-1) K hK)).2 (adj.homEquiv _ _ g)
+    dsimp only at hh
+    rw [← (adj.homEquiv _ _).symm_apply_apply g, ← hh]
+    exact (congrArg (T.mor₃ ≫ ·) (adj.homEquiv_naturality_left_symm T.mor₁ h)).trans
+      ((comp_distTriang_mor_zero₃₁_assoc T hT _).trans (zero_comp))
 
 end CategoryTheory.ObjectProperty
