@@ -103,9 +103,7 @@ theorem coe_detLineProdEquiv_tmul (a : detLine K U) (b : detLine K W) :
     (LinearMap.inr K U W ∘ Module.finBasis K W)
   rw [show (LinearMap.snd K U W : U × W → W) ∘ (LinearMap.inr K U W ∘ Module.finBasis K W) =
     Module.finBasis K W by funext; simp] at h
-  rw [TensorProduct.tmul_smul, map_smul, Submodule.coe_smul, detLineProdEquiv, h,
-    Submodule.coe_smul, map_smul, mul_smul_comm, exteriorPower.ιMulti_apply_coe,
-    ExteriorAlgebra.map_apply_ιMulti]
+  simp [detLineProdEquiv, h, ExteriorAlgebra.map_apply_ιMulti]
 
 /-- **Naturality of `TauCeti.detLineProdEquiv`.** For linear isomorphisms `e₁ : U ≃ U'` and
 `e₂ : W ≃ W'`, the isomorphism of determinant lines induced by `e₁ × e₂` is the tensor product of
@@ -134,12 +132,10 @@ theorem detLineCongr_prodComm_detLineProdEquiv (a : detLine K U) (b : detLine K 
       LinearMap.inr K W U := by ext <;> simp
   have hr : (LinearEquiv.prodComm K U W).toLinearMap ∘ₗ LinearMap.inr K U W =
       LinearMap.inl K W U := by ext <;> simp
-  rw [LinearEquiv.coe_detLineCongr, coe_detLineProdEquiv_tmul, map_mul, ← AlgHom.comp_apply,
-    ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, ExteriorAlgebra.map_comp_map, hl, hr,
-    Submodule.coe_smul,
-    coe_detLineProdEquiv_tmul, ExteriorAlgebra.map_inl_inr_anticomm K _ _ b a,
-    ← Int.cast_smul_eq_zsmul K, smul_smul]
-  norm_num [mul_comm (finrank K W), ← mul_pow]
+  simp only [LinearEquiv.coe_detLineCongr, coe_detLineProdEquiv_tmul, map_mul,
+    ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, hl, hr, Submodule.coe_smul,
+    ExteriorAlgebra.map_inl_inr_anticomm K _ _ b a, ← Int.cast_smul_eq_zsmul K]
+  norm_num [mul_comm (finrank K W), smul_smul, ← mul_pow]
 
 /-- **Associativity of `TauCeti.detLineProdEquiv`.** Under `(U × W) × X ≃ U × (W × X)`, the image
 of `(a ⊗ b) ⊗ c` is the image of `a ⊗ (b ⊗ c)`. -/
@@ -172,7 +168,8 @@ def dualDetLineProdEquiv :
 theorem dualDetLineProdEquiv_tmul_detLineProdEquiv_tmul (φ : Dual K (detLine K U))
     (ψ : Dual K (detLine K W)) (a : detLine K U) (b : detLine K W) :
     dualDetLineProdEquiv (φ ⊗ₜ ψ) (detLineProdEquiv (a ⊗ₜ b)) = φ a * ψ b := by
-  simpa [dualDetLineProdEquiv] using mul_comm (ψ b) (φ a)
+  simp [dualDetLineProdEquiv]
+  ring
 
 /-- **Exchanging the factors of `TauCeti.dualDetLineProdEquiv`** multiplies it by
 `(-1) ^ (dim U * dim W)`, as for `TauCeti.detLineCongr_prodComm_detLineProdEquiv`. -/
@@ -186,10 +183,8 @@ theorem dualDetLineProdEquiv_tmul_comp_detLineCongr_prodComm (φ : Dual K (detLi
   induction y using TensorProduct.inductionOn with
   | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
   | tmul b a =>
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, detLineCongr_prodComm_detLineProdEquiv,
-      map_smul, dualDetLineProdEquiv_tmul_detLineProdEquiv_tmul, LinearMap.smul_apply,
-      dualDetLineProdEquiv_tmul_detLineProdEquiv_tmul, smul_eq_mul, smul_eq_mul, mul_comm (φ a),
-      mul_comm (finrank K W)]
+    simp [detLineCongr_prodComm_detLineProdEquiv]
+    ring
 
 end Module
 
@@ -296,8 +291,8 @@ private theorem comp_detLineCongr_quotientEquiv_prodComm_symm
     refine LinearEquiv.toLinearMap_injective (Submodule.linearMap_qext _ ?_)
     ext x <;> simp [Submodule.Quotient.equiv_symm]
   rw [LinearEquiv.detLineCongr_symm, LinearMap.comp_assoc, ← LinearEquiv.coe_trans,
-    ← LinearEquiv.detLineCongr_trans, hc, LinearEquiv.detLineCongr_trans,
-    LinearEquiv.coe_trans, ← LinearMap.comp_assoc,
+    ← LinearEquiv.detLineCongr_trans, hc]
+  simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.coe_trans, ← LinearMap.comp_assoc,
     dualDetLineProdEquiv_tmul_comp_detLineCongr_prodComm, LinearMap.smul_comp]
 
 /-- `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm` on the elements of
