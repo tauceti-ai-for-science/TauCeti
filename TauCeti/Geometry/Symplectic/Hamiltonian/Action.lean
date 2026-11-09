@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
 # The Hamiltonian action functional on loops in a manifold
@@ -41,6 +41,26 @@ has action `-∫₀¹ H(t, x) dt` (`TauCeti.SmoothTwoForm.contractibleAction_con
 reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
 (`TauCeti.SmoothTwoForm.referenceAction_self`).
 
+Without an area condition the action is a function of the loop together with its reference
+cylinder, as in capped Floer theory, and the last part of this file develops its laws for the
+`C²` cylinders `TauCeti.IsLoopCylinder`, which are periodic in `t` and glue by
+`TauCeti.rectangleTrans`. Gluing a cylinder `w` from `γ` to `γ₁` in front of a cylinder `v` from
+`γ₁` changes the action by the area of `w` and the Hamiltonian terms of its two ends
+(`TauCeti.SmoothTwoForm.cylinderAction_rectangleTrans`). In particular:
+
+* gluing a sphere `B` to the centre of a cap of `γ` adds its area `∫ B^* σ` to the action
+  (`TauCeti.SmoothTwoForm.cylinderAction_rectangleTrans_of_sphere`), and any two caps `u`, `v` of
+  `γ` differ in action by the area of the sphere obtained by gluing them along `γ`
+  (`TauCeti.SmoothTwoForm.cylinderAction_sub_cylinderAction`). These are the recapping laws of
+  capped loops: recapping by a sphere shifts the action by its symplectic area;
+* for a closed form, the action does not change along a `C²` homotopy of reference cylinders that
+  fixes the loop `γ` and either fixes the reference loop or keeps it constant
+  (`TauCeti.SmoothTwoForm.cylinderAction_eq_of_homotopy`), so it only depends on the homotopy
+  class of the cap or reference cylinder.
+
+For a weakly exact form, the action of a cap is the contractible action of its loop
+(`TauCeti.IsWeaklyExact.contractibleLoopAction_eq_cylinderAction`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.cylinderAction σ H u`: the action of the loop `t ↦ u (0, t)` measured
@@ -49,6 +69,13 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   cap, when one exists.
 * `TauCeti.SmoothTwoForm.referenceAction σ H γ₀ γ`: the action of a loop measured against a smooth
   cylinder to the reference loop `γ₀`, when one exists.
+
+## Main results
+
+* `TauCeti.SmoothTwoForm.cylinderAction_rectangleTrans`: the action along a glued cylinder.
+* `TauCeti.SmoothTwoForm.cylinderAction_rectangleTrans_of_sphere`,
+  `TauCeti.SmoothTwoForm.cylinderAction_sub_cylinderAction`: the recapping laws.
+* `TauCeti.SmoothTwoForm.cylinderAction_eq_of_homotopy`: homotopy invariance for a closed form.
 
 ## References
 
@@ -171,6 +198,95 @@ theorem referenceAction_self (hσ : VanishesOnTori σ.1) (hγ₀ : ContMDiff �
     ⟨hγ₀.comp contDiff_snd.contMDiff, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ hper⟩
   rw [referenceAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
     rectangleIntegral_comp_snd, zero_sub]
+
+/-! ### Capped loops: gluing, recapping and homotopy invariance -/
+
+section Capped
+
+variable {γ₁ γ₂ : ℝ → M} {w : ℝ × ℝ → M}
+
+/-- The action measured against a `C²` cylinder from `γ` is `∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
+theorem cylinderAction_eq_of_isLoopCylinder (hu : IsLoopCylinder I u γ γ₀) :
+    σ.cylinderAction H u = rectangleIntegral σ.1 u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t) := by
+  simp only [cylinderAction_def, hu.apply_zero]
+
+/-- **The action along a glued cylinder.** Gluing a cylinder `w` from `γ` to `γ₁` in front of a
+cylinder `v` from `γ₁` measures the action of `γ` by the area of `w`, the Hamiltonian terms of
+the two ends of `w`, and the action of `γ₁` measured against `v`:
+`𝒜_H(γ, w # v) = ∫ w^* σ - ∫₀¹ H(t, γ(t)) dt + ∫₀¹ H(t, γ₁(t)) dt + 𝒜_H(γ₁, v)`. -/
+theorem cylinderAction_rectangleTrans (hw : IsLoopCylinder I w γ γ₁)
+    (hv : IsLoopCylinder I v γ₁ γ₂) :
+    σ.cylinderAction H (rectangleTrans w v) =
+      rectangleIntegral σ.1 w (0, 0) (1, 1) - (∫ t in 0..1, H t (γ t)) +
+        (∫ t in 0..1, H t (γ₁ t)) + σ.cylinderAction H v := by
+  rw [cylinderAction_eq_of_isLoopCylinder (hw.trans hv), cylinderAction_eq_of_isLoopCylinder hv,
+    rectangleIntegral_rectangleTrans (σ.isSmoothForm.of_le (by simp))
+      (hw.contMDiff.of_le one_le_two) (hv.contMDiff.of_le one_le_two)
+      fun t ↦ (hw.apply_one t).trans (hv.apply_zero t).symm]
+  ring
+
+/-- **Recapping by a sphere.** Gluing a sphere `w`, a cylinder between the constant loops at `x`
+and `y`, to the centre `x` of a cap `u` of `γ` gives a cap of `γ` (`TauCeti.IsLoopCylinder.trans`)
+whose action is the action of `u` plus the area `∫ w^* σ` of the sphere. -/
+theorem cylinderAction_rectangleTrans_of_sphere {x y : M} (hu : IsLoopCylinder I u γ fun _ ↦ x)
+    (hw : IsLoopCylinder I w (fun _ ↦ x) fun _ ↦ y) :
+    σ.cylinderAction H (rectangleTrans u w) =
+      σ.cylinderAction H u + rectangleIntegral σ.1 w (0, 0) (1, 1) := by
+  rw [cylinderAction_rectangleTrans hu hw, cylinderAction_eq_of_isLoopCylinder hu,
+    cylinderAction_eq_of_isLoopCylinder hw]
+  ring
+
+/-- **Two caps differ by a sphere.** For caps `u` and `v` of `γ`, centred at `x` and `y`, the
+difference of the actions is the area of the sphere obtained by gluing the reversed cap `u` to
+`v` along `γ`, a cylinder from the constant loop at `x` to the constant loop at `y`
+(`TauCeti.IsLoopCylinder.trans` applied to `TauCeti.IsLoopCylinder.symm`). -/
+theorem cylinderAction_sub_cylinderAction {x y : M} (hu : IsLoopCylinder I u γ fun _ ↦ x)
+    (hv : IsLoopCylinder I v γ fun _ ↦ y) :
+    σ.cylinderAction H v - σ.cylinderAction H u =
+      rectangleIntegral σ.1 (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) v) (0, 0) (1, 1) := by
+  have hσ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
+  rw [rectangleIntegral_rectangleTrans hσ (hu.symm.contMDiff.of_le one_le_two)
+      (hv.contMDiff.of_le one_le_two) fun t ↦ (hu.symm.apply_one t).trans (hv.apply_zero t).symm,
+    rectangleIntegral_comp_prodMap_one_sub hσ (hu.contMDiff.of_le one_le_two),
+    cylinderAction_eq_of_isLoopCylinder hu, cylinderAction_eq_of_isLoopCylinder hv]
+  ring
+
+/-- **Homotopy invariance of the action.** Let `σ` be closed and `Φ : (ℝ × ℝ) × ℝ → M` a `C²`
+homotopy of maps of the unit square that fixes the loop `t ↦ Φ ((0, t), c)`, is periodic in `t`,
+and along which the loop `t ↦ Φ ((1, t), c)` either stays fixed (a homotopy of reference cylinders)
+or remains constant (a homotopy of caps, whose centre may move). These conditions are only imposed
+for `s, t, c ∈ [0, 1]`. Then the action measured against `Φ (·, 1)` equals the action measured
+against `Φ (·, 0)`. -/
+theorem cylinderAction_eq_of_homotopy (hdσ : mextDeriv σ.1 = 0) {Φ : (ℝ × ℝ) × ℝ → M}
+    (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
+    (h₀ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
+    (h₁ : (∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, t), 0)) ∨
+      ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
+    (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = Φ ((s, 0), c)) :
+    σ.cylinderAction H (fun z ↦ Φ (z, 1)) = σ.cylinderAction H (fun z ↦ Φ (z, 0)) := by
+  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  -- A constant end loop is constant at its value at `t = 1`, the corner used by
+  -- `TauCeti.rectangleIntegral_eq_of_homotopy`.
+  have h₁' := h₁.imp id fun h t ht c hc ↦
+    (h t ht c hc).trans (h 1 (right_mem_Icc.2 zero_le_one) c hc).symm
+  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
+    intervalIntegral.integral_congr fun t ht ↦ by
+      simp only [h₀ t (hI ▸ ht) 1 (right_mem_Icc.2 zero_le_one)]
+  rw [cylinderAction_def, cylinderAction_def, hH,
+    rectangleIntegral_eq_of_homotopy (σ.isSmoothForm.of_le (by simp)) hdσ hΦ (a := (0, 0))
+      (b := (1, 1)) (Or.inl (by simpa only [hI] using h₀)) (by simpa only [hI] using h₁')
+      (by simpa only [hI] using hper)]
+
+/-- For a weakly exact form, the contractible action of a loop is its action measured against any
+of its caps. -/
+theorem _root_.TauCeti.IsWeaklyExact.contractibleLoopAction_eq_cylinderAction
+    (hw : IsWeaklyExact σ.1) (hu : IsCap I u γ) :
+    contractibleLoopAction σ.1 H γ = σ.cylinderAction H u := by
+  obtain ⟨x, hx⟩ := isCap_iff.1 hu
+  rw [hw.contractibleLoopAction_eq (σ.isSmoothForm.of_le (by simp)) H hu,
+    cylinderAction_eq_of_isLoopCylinder hx]
+
+end Capped
 
 end SmoothTwoForm
 
