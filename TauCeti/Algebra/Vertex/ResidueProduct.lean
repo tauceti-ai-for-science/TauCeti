@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.VertexOperator
+public import TauCeti.Algebra.Vertex.Derivative
+public import TauCeti.Algebra.Vertex.FormalDistribution
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
 
@@ -23,9 +24,18 @@ with index at least `N` vanish. These are the singular products used in the
 operator product expansion; negative residue products involve normal ordering
 and are not constructed here.
 
+The residue products are the coefficients of the delta expansion of the commutator of local
+fields. This gives the commutator formula
+`[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A₍ⱼ₎B)₍ₘ₊ₙ₋ⱼ₎` for fields local of order `N`
+(`VertexOperator.IsLocalOfOrder.ncoeff_mul_sub_mul`). Residue products also satisfy the Leibniz
+rule `∂(A₍ⱼ₎B) = (∂A)₍ⱼ₎B + A₍ⱼ₎(∂B)` (`VertexOperator.derivative_nonnegResidueProduct`), and
+commutation with a fixed operator acts on them as a derivation
+(`VertexOperator.lie_ncoeff_nonnegResidueProduct`).
+
 ## References
 
-* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.3.
+* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.3, for the decomposition of local
+  distributions and the commutator formula in modes.
 * E. Frenkel, D. Ben-Zvi, *Vertex Algebras and Algebraic Curves*, 2nd ed., §1.2.
 -/
 
@@ -33,7 +43,7 @@ public section
 
 noncomputable section
 
-open Finset Filter
+open Finset Filter TauCeti
 
 namespace VertexOperator
 
@@ -125,5 +135,76 @@ theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {
   apply ext_ncoeff
   intro m
   simpa using isLocalOfOrder_iff.mp (h.mono hn) 0 m
+
+/-- The `j`th residue `Res_z (z - w)ʲ [A(z), B(w)]` of the commutator distribution is the
+`j`th nonnegative residue product. -/
+theorem residue_mulSub_pow_commutatorDistribution (j : ℕ) (A B : VertexOperator R V) :
+    FormalDistribution.residue ((FormalDistribution.mulSub ^ j) (A.commutatorDistribution B)) =
+      fun n ↦ (nonnegResidueProduct j A B)[[n]] := by
+  ext1 n
+  rw [FormalDistribution.residue_apply, FormalDistribution.mulSub_pow_apply]
+  simp
+
+/-- **The commutator formula** for mutually local fields:
+`[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A₍ⱼ₎B)₍ₘ₊ₙ₋ⱼ₎`, where `A₍ⱼ₎B` is the `j`th nonnegative
+residue product. The binomial coefficients are integer binomial coefficients, so negative `m`
+is allowed. -/
+theorem IsLocalOfOrder.ncoeff_mul_sub_mul {A B : VertexOperator R V} {N : ℕ}
+    (h : A.IsLocalOfOrder B N) (m n : ℤ) :
+    A[[m]] * B[[n]] - B[[n]] * A[[m]] =
+      ∑ j ∈ range N, Ring.choose m j • (nonnegResidueProduct j A B)[[m + n - j]] := by
+  have h₁ := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
+  simp only [residue_mulSub_pow_commutatorDistribution] at h₁
+  simpa [Finset.sum_apply] using h₁
+
+/-- Commutation with an operator `T` is a derivation of nonnegative residue products: if
+`[T, A₍ₙ₎] = A'₍ₙ₎` and `[T, B₍ₙ₎] = B'₍ₙ₎` for all `n`, then
+`[T, (A₍ⱼ₎B)₍ₘ₎] = (A'₍ⱼ₎B + A₍ⱼ₎B')₍ₘ₎`. -/
+theorem lie_ncoeff_nonnegResidueProduct (T : Module.End R V) {A A' B B' : VertexOperator R V}
+    (hA : ∀ n, ⁅T, A[[n]]⁆ = A'[[n]]) (hB : ∀ n, ⁅T, B[[n]]⁆ = B'[[n]]) (j : ℕ) (m : ℤ) :
+    ⁅T, (nonnegResidueProduct j A B)[[m]]⁆ =
+      (nonnegResidueProduct j A' B + nonnegResidueProduct j A B')[[m]] := by
+  simp only [map_add, Pi.add_apply, ncoeff_nonnegResidueProduct, ← hA, ← hB,
+    Ring.lie_def, mul_sum, sum_mul, ← sum_sub_distrib, ← sum_add_distrib]
+  refine sum_congr rfl fun ij _ ↦ ?_
+  simp only [mul_sub, sub_mul, mul_smul_comm, smul_mul_assoc, ← smul_sub, ← smul_add, mul_assoc]
+  congr 2
+  abel
+
+/-- The binomial cancellation behind the Leibniz rule: differentiating `(z - w)ʲ` in `z` and in `w`
+gives opposite results. -/
+private theorem sum_antidiagonal_choose_smul_add_smul_eq_zero {M : Type*} [AddCommGroup M]
+    (c : ℤ → ℤ → M) (j : ℕ) (m : ℤ) :
+    ∑ ij ∈ antidiagonal j, j.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      ((ij.1 : ℤ) • c (ij.1 - 1) (m + ij.2) + (ij.2 : ℤ) • c ij.1 (m + ij.2 - 1)) = 0 := by
+  cases j with
+  | zero => simp
+  | succ J =>
+    simp only [smul_add, sum_add_distrib]
+    rw [Nat.sum_antidiagonal_succ, Nat.sum_antidiagonal_succ']
+    simp only [Nat.cast_zero, zero_smul, smul_zero, zero_add, ← sum_add_distrib]
+    refine sum_eq_zero fun ij hij ↦ ?_
+    have hc := Nat.choose_succ_right_eq (J + 1) ij.1
+    rw [show J + 1 - ij.1 = ij.2 + 1 by have := mem_antidiagonal.1 hij; omega] at hc
+    have h₁ : ((ij.1 + 1 : ℕ) : ℤ) - 1 = ij.1 := by push_cast; ring
+    have h₂ : m + ((ij.2 + 1 : ℕ) : ℤ) - 1 = m + ij.2 := by push_cast; ring
+    have hc' : ((J + 1).choose (ij.1 + 1) : ℤ) * ((ij.1 + 1 : ℕ) : ℤ) =
+        ((J + 1).choose ij.1 : ℤ) * ((ij.2 + 1 : ℕ) : ℤ) := by exact_mod_cast hc
+    rw [h₁, h₂, pow_succ]
+    linear_combination (norm := module) hc' • ((-1 : ℤ) ^ ij.2 • c ij.1 (m + ij.2))
+
+/-- **The Leibniz rule** for nonnegative residue products:
+`∂(A₍ⱼ₎B) = (∂A)₍ⱼ₎B + A₍ⱼ₎(∂B)`. -/
+theorem derivative_nonnegResidueProduct (j : ℕ) (A B : VertexOperator R V) :
+    derivative (nonnegResidueProduct j A B) =
+      nonnegResidueProduct j (derivative A) B + nonnegResidueProduct j A (derivative B) := by
+  refine ext_ncoeff fun m ↦ ?_
+  have key := sum_antidiagonal_choose_smul_add_smul_eq_zero (A.commutatorDistribution B) j m
+  simp only [ncoeff_derivative, map_add, Pi.add_apply, ncoeff_nonnegResidueProduct]
+  rw [← sub_eq_zero, ← key, smul_sum, ← sum_add_distrib, ← sum_sub_distrib]
+  refine sum_congr rfl fun ij _ ↦ ?_
+  rw [show m - 1 + ij.2 = m + ij.2 - 1 by ring]
+  simp only [commutatorDistribution_apply, smul_mul_assoc, mul_smul_comm]
+  module
 
 end VertexOperator

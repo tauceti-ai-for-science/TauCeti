@@ -219,6 +219,18 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
 
+/-- Multiplication by `(z-w)^N` commutes with left multiplication by a constant. -/
+theorem mulSub_pow_mul_left_apply {A : Type*} [NonUnitalNonAssocRing A] (N : ℕ) (a : A)
+    (c : FormalDistribution A) (m n : ℤ) :
+    (mulSub ^ N) (fun m n ↦ a * c m n) m n = a * (mulSub ^ N) c m n := by
+  simp only [mulSub_pow_apply, Finset.mul_sum, mul_smul_comm]
+
+/-- Multiplication by `(z-w)^N` commutes with right multiplication by a constant. -/
+theorem mulSub_pow_mul_right_apply {A : Type*} [NonUnitalNonAssocRing A] (N : ℕ) (a : A)
+    (c : FormalDistribution A) (m n : ℤ) :
+    (mulSub ^ N) (fun m n ↦ c m n * a) m n = (mulSub ^ N) c m n * a := by
+  simp only [mulSub_pow_apply, Finset.sum_mul, smul_mul_assoc]
+
 end FormalDistribution
 
 end TauCeti
