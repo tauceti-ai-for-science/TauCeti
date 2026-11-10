@@ -34,6 +34,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 * `TauCeti.dyadicIndex`, `TauCeti.dyadicCube`, `TauCeti.dyadicCube_eq_pi`: dyadic cubes and the
   position of the cube of a given level containing a point.
 * `TauCeti.dyadicCube_nonempty`: dyadic cubes are nonempty.
+* `TauCeti.dyadicCenter`, `TauCeti.dyadicCenter_mem_dyadicCube`: the centre of a dyadic cube, which
+  lies in the cube.
 * `TauCeti.dyadicIndex_add_one`, `TauCeti.dyadicCube_subset_dyadicCube`,
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
@@ -95,6 +97,22 @@ theorem dyadicCube_eq_pi (k : ℤ) (m : ι → ℤ) :
   ext x
   simp only [mem_dyadicCube, funext_iff, dyadicIndex_apply, Int.floor_eq_iff, mem_univ_pi, mem_Ico,
     le_div_iff₀ h2, div_lt_iff₀ h2]
+
+/-- The centre of the dyadic cube of level `k` at position `m`: its `i`-th coordinate is
+`(mᵢ + 1 / 2) 2ᵏ`. -/
+noncomputable def dyadicCenter (k : ℤ) (m : ι → ℤ) : ι → ℝ :=
+  fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k
+
+@[simp]
+theorem dyadicCenter_apply (k : ℤ) (m : ι → ℤ) (i : ι) :
+    dyadicCenter k m i = ((m i : ℝ) + 2⁻¹) * 2 ^ k :=
+  (rfl)
+
+/-- A dyadic cube contains its centre. -/
+theorem dyadicCenter_mem_dyadicCube (k : ℤ) (m : ι → ℤ) : dyadicCenter k m ∈ dyadicCube k m :=
+  mem_dyadicCube.2 <| funext fun i => by
+    rw [dyadicIndex_apply, dyadicCenter_apply, mul_div_cancel_right₀ _ (zpow_ne_zero k two_ne_zero),
+      Int.floor_intCast_add, Int.floor_eq_zero_iff.2 ⟨by norm_num, by norm_num⟩, add_zero]
 
 /-- Dyadic cubes are measurable. -/
 theorem measurableSet_dyadicCube [Countable ι] (k : ℤ) (m : ι → ℤ) :

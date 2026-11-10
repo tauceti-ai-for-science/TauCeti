@@ -20,7 +20,8 @@ fractional part of `t`.
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
 interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its index between
-`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`.
+`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. An open interval shorter than the step meets at most two
+consecutive cells.
 
 ## Main results
 
@@ -31,6 +32,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
+* `TauCeti.floor_div_mem_pair`: for `s > 2 r`, the points within `r` of `c` have `⌊x / s⌋` in a
+  set of two consecutive integers.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
 -/
@@ -79,6 +82,24 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
   · refine Int.le_floor.2 ?_
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
+
+/-- For a step `s > 2 r`, a point `x` within `r` of `c` has `⌊x / s⌋` equal to one of the two
+consecutive integers `⌊(c - r) / s⌋` and `⌊(c - r) / s⌋ + 1`. -/
+theorem floor_div_mem_pair {x c r s : K} (hs : 0 < s) (hrs : 2 * r < s) (hx : |x - c| < r) :
+    ⌊x / s⌋ ∈ ({⌊(c - r) / s⌋, ⌊(c - r) / s⌋ + 1} : Finset ℤ) := by
+  rw [abs_sub_lt_iff] at hx
+  have h1 : ⌊(c - r) / s⌋ ≤ ⌊x / s⌋ :=
+    Int.floor_le_floor (div_le_div_of_nonneg_right (by linarith) hs.le)
+  have h2 : ⌊x / s⌋ < ⌊(c - r) / s⌋ + 2 := by
+    have h3 := Int.lt_floor_add_one ((c - r) / s)
+    have h4 : x / s < (c - r) / s + 1 := by
+      rw [div_add_one hs.ne', div_lt_div_iff_of_pos_right hs]
+      linarith
+    rw [Int.floor_lt]
+    push_cast
+    linarith
+  rw [Finset.mem_insert, Finset.mem_singleton]
+  omega
 
 /-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
 floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of

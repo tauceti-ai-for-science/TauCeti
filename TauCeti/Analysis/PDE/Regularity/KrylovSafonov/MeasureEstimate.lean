@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The basic measure estimate of Krylov and Safonov
@@ -387,8 +388,7 @@ private theorem ofReal_mul_volume_ball_le_of_volume_ball_le {Γ S : Set (Euclide
   set n : ℝ := (N : ℝ)
   have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
   set B := n * (ω / 2) ^ n⁻¹ / 4 * lam / R
   -- The `Lⁿ` part is at most half of the left-hand side.
   have hfn : eLpNorm (fun x ↦ (f x)⁺) N (volume.restrict (ball c R)) ≤ ENNReal.ofReal B := by
@@ -545,8 +545,7 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
   set A := 2 / ((τ ^ 2 + θ ^ 2) ^ (-β) - (1 ^ 2 + θ ^ 2) ^ (-β))
   have hA : 0 < A := div_pos two_pos (sub_pos.2 hG)
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
   refine ⟨A * (θ ^ 2) ^ (-β), 1 / (2 ^ (N + 1) * (4 * A * β * κ * (θ ^ 2) ^ (-β - 1)) ^ N *
     θ ^ N), n * (ω / 2) ^ n⁻¹ / 4, by positivity, by positivity, by positivity, ?_⟩
   intro lam Lam R c a u f hR ha hLam hcont hu hbdry hsuper hf ⟨x₀, hx₀, hux₀⟩

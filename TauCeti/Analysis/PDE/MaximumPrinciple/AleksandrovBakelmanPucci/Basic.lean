@@ -15,6 +15,7 @@ import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The Aleksandrov–Bakelman–Pucci maximum principle
@@ -262,8 +263,7 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
   have hn : n ≠ 0 := Fintype.card_ne_zero
   have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
   have hN : 0 ≤ N := ENNReal.toReal_nonneg
   rcases le_or_gt t m with hux | hux
   · exact le_add_of_le_of_nonneg hux (mul_nonneg (div_nonneg diam_nonneg (by positivity)) hN)
