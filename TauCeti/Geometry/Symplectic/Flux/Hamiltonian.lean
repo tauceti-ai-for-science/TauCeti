@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Velocity
 public import TauCeti.Geometry.Symplectic.Flux
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -141,6 +142,15 @@ variable (Φ : Diffeotopy J ∞ M) (H : unitInterval × M → ℝ)
 /-- The time coordinate `(x, t) ↦ t` of the cylinder `M × [0, 1]`. -/
 private def timeCoord : M × unitInterval → ℝ := fun p ↦ (p.2 : ℝ)
 
+omit [TopologicalSpace M] in
+/-- The time coordinate is the inclusion `[0, 1] → ℝ` composed with the second projection. -/
+private theorem timeCoord_eq_comp : timeCoord (M := M) = Subtype.val ∘ Prod.snd := rfl
+
+omit [TopologicalSpace M] in
+/-- On the time slice `M × {s}`, the time coordinate is the constant `s`. -/
+private theorem timeCoord_comp_slice (s : unitInterval) :
+    timeCoord ∘ (fun y : M ↦ (y, s)) = fun _ ↦ (s : ℝ) := rfl
+
 private theorem contMDiff_timeCoord : ContMDiff (J.prod (𝓡∂ 1)) 𝓘(ℝ) ∞ (timeCoord (M := M)) :=
   contMDiff_subtypeVal_Icc.comp contMDiff_snd
 
@@ -149,7 +159,7 @@ private theorem mfderiv_timeCoord_apply (p : M × unitInterval)
     (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
     mfderiv (J.prod (𝓡∂ 1)) 𝓘(ℝ) (timeCoord (M := M)) p w =
       mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) p.2 w.2 := by
-  rw [show (timeCoord (M := M)) = Subtype.val ∘ Prod.snd from rfl, mfderiv_comp_snd]
+  rw [timeCoord_eq_comp, mfderiv_comp_snd]
   rfl
 
 /-- The Hamiltonian read along the motion, `K (x, t) = H_t (φ_t x)`. -/
@@ -161,6 +171,32 @@ private theorem contMDiff_motionHamiltonian {n : ℕ∞} (hH : ContMDiff ((𝓡�
     (WithTop.coe_le_coe.mpr le_top)))).congr fun p ↦ by
     rw [Function.comp_apply, cylinderMap_apply]; rfl
 
+/-- `K (x, t) = H_t (φ_t x)` is `H` composed with the map `(x, t) ↦ (t, φ_t x)`. -/
+private theorem motionHamiltonian_eq_comp :
+    motionHamiltonian Φ H = H ∘ fun q ↦ (q.2, Φ.cylinderMap q) :=
+  funext fun q ↦ by rw [Function.comp_apply, cylinderMap_apply]; rfl
+
+/-- The map `(x, t) ↦ (t, φ_t x)` sends a spatial vector `(u, 0)` to `(0, dφ_t (u, 0))`. -/
+private theorem mfderiv_snd_prodMk_cylinderMap_inl (p : M × unitInterval) (u : E) :
+    mfderiv (J.prod (𝓡∂ 1)) ((𝓡∂ 1).prod J) (fun q ↦ (q.2, Φ.cylinderMap q)) p (u, 0) =
+      ((0 : EuclideanSpace ℝ (Fin 1)), mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (u, 0)) := by
+  have hcyl : MDifferentiableAt (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :=
+    (Φ.contMDiff_cylinderMap p).mdifferentiableAt (by simp)
+  rw [mfderiv_prodMk mdifferentiableAt_snd hcyl, mfderiv_snd]
+  -- The first component is the projection of `(u, 0)` to its time component.
+  rfl
+
+/-- The derivative of the time slice `H_t` of `H` at `y` is `dH (t, y)` on vectors `(0, v)`. -/
+private theorem mfderiv_slice_apply (hH : MDifferentiable ((𝓡∂ 1).prod J) 𝓘(ℝ) H)
+    (t : unitInterval) (y : M) (v : TangentSpace J y) :
+    mfderiv J 𝓘(ℝ) (fun y ↦ H (t, y)) y v =
+      mfderiv ((𝓡∂ 1).prod J) 𝓘(ℝ) H (t, y) ((0 : EuclideanSpace ℝ (Fin 1)), v) := by
+  refine (mfderiv_comp_apply (g := H) (f := fun y : M ↦ (t, y)) y (hH _)
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) v).trans ?_
+  rw [mfderiv_prod_right]
+  -- `ContinuousLinearMap.inr` sends `v` to the pair `(0, v)`.
+  rfl
+
 /-- The spatial derivative of `K (x, t) = H_t (φ_t x)` is `d H_t ∘ d φ_t`. -/
 private theorem mfderiv_motionHamiltonian_inl (hH : ContMDiff ((𝓡∂ 1).prod J) 𝓘(ℝ) 1 H)
     (p : M × unitInterval) (u : E) :
@@ -168,19 +204,12 @@ private theorem mfderiv_motionHamiltonian_inl (hH : ContMDiff ((𝓡∂ 1).prod 
       mfderiv J 𝓘(ℝ) (fun y ↦ H (p.2, y)) (Φ.cylinderMap p)
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (u, 0)) := by
   have hHd : MDifferentiable ((𝓡∂ 1).prod J) 𝓘(ℝ) H := hH.mdifferentiable one_ne_zero
-  have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Φ.cylinderMap :=
-    Φ.contMDiff_cylinderMap.mdifferentiable (by simp)
-  have hs : MDifferentiableAt J ((𝓡∂ 1).prod J) (fun y : M ↦ (p.2, y)) (Φ.cylinderMap p) :=
-    mdifferentiableAt_const.prodMk mdifferentiableAt_id
-  rw [show motionHamiltonian Φ H = H ∘ fun q ↦ (q.2, Φ.cylinderMap q) from
-      funext fun q ↦ by rw [Function.comp_apply, cylinderMap_apply]; rfl,
-    mfderiv_comp p (hHd _) (mdifferentiableAt_snd.prodMk (hcyl p)),
-    show (fun y ↦ H (p.2, y)) = H ∘ fun y ↦ (p.2, y) from rfl, mfderiv_comp _ (hHd _) hs,
-    mfderiv_prodMk mdifferentiableAt_snd (hcyl p),
-    mfderiv_prodMk (f := fun _ : M ↦ p.2) (g := fun y : M ↦ y) mdifferentiableAt_const
-      mdifferentiableAt_id, mfderiv_snd, mfderiv_const, show (fun y : M ↦ y) = id from rfl,
-    mfderiv_id]
-  -- Both sides apply `dH` at `(t, φ_t x)` to the pair `(0, dφ_t (u, 0))`.
+  have hcyl : MDifferentiableAt (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :=
+    (Φ.contMDiff_cylinderMap p).mdifferentiableAt (by simp)
+  rw [motionHamiltonian_eq_comp]
+  refine (mfderiv_comp_apply p (hHd _) (mdifferentiableAt_snd.prodMk hcyl) _).trans ?_
+  rw [mfderiv_snd_prodMk_cylinderMap_inl, mfderiv_slice_apply H hHd]
+  -- Both sides are `dH (t, φ_t x) (0, dφ_t (u, 0))`, up to the indexing of the tangent spaces.
   rfl
 
 variable [IsManifold J ∞ M]
@@ -243,28 +272,9 @@ private theorem mpullback_slice_hamiltonianTimeForm (s : unitInterval) :
   funext x
   rw [cylinderTimeForm, mextDerivₗ_apply, mpullback_mextDeriv_ofFunction_apply (hι x)
     ((contMDiff_timeCoord (J := J) (M := M)).mdifferentiable (by simp) _),
-    show timeCoord ∘ (fun y : M ↦ (y, s)) = fun _ ↦ (s : ℝ) from rfl, mextDeriv_ofFunction,
-    mvfderiv_const]
+    timeCoord_comp_slice, mextDeriv_ofFunction, mvfderiv_const]
   ext v
   simp
-
-/-- Evaluating the contraction of a one-form with `a`, composed with `g`, on the empty tuple. -/
-private theorem curryLeft_compContinuousLinearMap_apply_fin_zero {X Y : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (f : X [⋀^Fin 1]→L[ℝ] ℝ) (a : X) (g : Y →L[ℝ] X) (v : Fin 0 → Y) :
-    ((f.curryLeft a).compContinuousLinearMap g) v = f ![a] := by
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.curryLeft_apply_apply]
-  exact congrArg f (funext fun i ↦ by fin_cases i; rfl)
-
-/-- Evaluating the contraction of a two-form with `a`, composed with `g`, on a single vector. -/
-private theorem curryLeft_compContinuousLinearMap_apply_fin_one {X Y : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (f : X [⋀^Fin 2]→L[ℝ] ℝ) (a : X) (g : Y →L[ℝ] X) (v : Fin 1 → Y) :
-    ((f.curryLeft a).compContinuousLinearMap g) v = f ![a, g (v 0)] := by
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.curryLeft_apply_apply]
-  exact congrArg f (funext fun i ↦ by fin_cases i <;> rfl)
 
 /-- The homotopy operator of `K dt` is the time average `x ↦ ∫₀¹ K (x, t) dt`. -/
 private theorem homotopyOperator_hamiltonianTimeForm :
@@ -283,7 +293,7 @@ private theorem homotopyOperator_hamiltonianTimeForm :
   have ha : mvfderiv (𝓡∂ 1) (Subtype.val : unitInterval → ℝ) (projIcc 0 1 zero_le_one t)
       (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)) = 1 :=
     (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans (mfderiv_subtypeVal_Icc_one _)
-  refine (curryLeft_compContinuousLinearMap_apply_fin_zero _ _ _ w).trans
+  refine (ContinuousAlternatingMap.curryLeft_compContinuousLinearMap_apply_fin_zero _ _ _ w).trans
     ((hamiltonianTimeForm_apply Φ H _ _).trans ((congrArg (_ * ·) ha).trans ?_))
   simp
 
@@ -327,7 +337,7 @@ private theorem fluxForm_apply_eq_mextDeriv_homotopyOperator (hΦ : Φ.IsHamilto
   rw [ContinuousAlternatingMap.neg_apply]
   convert eval₂_mfderiv_cylinderMap_eq_neg_mextDeriv hΦ hH x (projIcc 0 1 zero_le_one t) (v 0)
     using 3 <;>
-  exact curryLeft_compContinuousLinearMap_apply_fin_one _ _ _ v
+  exact ContinuousAlternatingMap.curryLeft_compContinuousLinearMap_apply_fin_one _ _ _ v
 
 end Cylinder
 

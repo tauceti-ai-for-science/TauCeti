@@ -18,6 +18,11 @@ the topological interior-product API without importing wedge constructions.
 Currying a continuous alternating map of two vectors in its first slot and reading the result as
 a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a continuous linear map
 `ContinuousAlternatingMap.flatL`.
+
+Finally, the contraction `f.curryLeft a` precomposed with a continuous linear map is evaluated on
+tuples of length zero and one
+(`ContinuousAlternatingMap.curryLeft_compContinuousLinearMap_apply_fin_zero`,
+`ContinuousAlternatingMap.curryLeft_compContinuousLinearMap_apply_fin_one`).
 -/
 
 public section
@@ -62,5 +67,28 @@ theorem flatL_apply_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v w : E) : flatL 𝕜
   DFunLike.congr_fun (ofSubsingleton_flatL_apply f v) ![w]
 
 end flatL
+
+section compContinuousLinearMap
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Contracting an alternating map of one vector with `a` and precomposing with `g` gives, on the
+empty tuple, the value `f ![a]`. -/
+theorem curryLeft_compContinuousLinearMap_apply_fin_zero (f : E [⋀^Fin 1]→L[𝕜] F) (a : E)
+    (g : G →L[𝕜] E) (v : Fin 0 → G) :
+    (f.curryLeft a).compContinuousLinearMap g v = f ![a] := by
+  rw [compContinuousLinearMap_apply, curryLeft_apply_apply]
+  exact congrArg f (funext fun i ↦ by fin_cases i; rfl)
+
+/-- Contracting an alternating map of two vectors with `a` and precomposing with `g` gives, on a
+single vector `v 0`, the value `f ![a, g (v 0)]`. -/
+theorem curryLeft_compContinuousLinearMap_apply_fin_one (f : E [⋀^Fin 2]→L[𝕜] F) (a : E)
+    (g : G →L[𝕜] E) (v : Fin 1 → G) :
+    (f.curryLeft a).compContinuousLinearMap g v = f ![a, g (v 0)] := by
+  rw [compContinuousLinearMap_apply, curryLeft_apply_apply]
+  exact congrArg f (funext fun i ↦ by fin_cases i <;> rfl)
+
+end compContinuousLinearMap
 
 end ContinuousAlternatingMap
