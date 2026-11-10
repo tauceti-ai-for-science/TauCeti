@@ -106,13 +106,13 @@ private theorem hasDerivAt_mul_exp_sub_one_sub (η a c s : ℝ) :
 derivatives of the potential density along `φ` at parameters `t` with `|t φ| ≤ B`, is
 integrable. -/
 private theorem integrable_potentialBound {η v φ : α → ℝ} {M : ℝ} (B : ℝ)
-    (hφm : AEStronglyMeasurable φ μ) (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
+    (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
     (hφv : Integrable (fun x ↦ φ x * v x) μ)
     (hpot : Integrable (fun x ↦ η x * (Real.exp (2 * v x) - 1 - 2 * v x)) μ) :
     Integrable (fun x ↦ 2 * |φ x| *
       (Real.exp (2 * B) * (η x * (Real.exp (2 * v x) - 1 - 2 * v x) + 1 + 2 * |v x|) + 1)) μ := by
   have h₁ : Integrable (fun x ↦ |φ x| * (η x * (Real.exp (2 * v x) - 1 - 2 * v x))) μ :=
-    hpot.bdd_mul (continuous_abs.comp_aestronglyMeasurable hφm)
+    hpot.bdd_mul (continuous_abs.comp_aestronglyMeasurable hφ.aestronglyMeasurable)
       (ae_of_all _ fun x ↦ by simpa using hφM x)
   refine (((h₁.const_mul (2 * Real.exp (2 * B))).add
     (hφ.abs.const_mul (2 * (Real.exp (2 * B) + 1)))).add
@@ -127,20 +127,20 @@ variable {η v φ : α → ℝ} {M : ℝ}
 `t = 0`. -/
 private theorem integrable_potential_add_mul (hη : AEStronglyMeasurable η μ)
     (hη₀ : ∀ x, 0 ≤ η x) (hη₁ : ∀ x, η x ≤ 1) (hv : AEStronglyMeasurable v μ)
-    (hφm : AEStronglyMeasurable φ μ) (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
+    (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
     (hφv : Integrable (fun x ↦ φ x * v x) μ)
     (hpot : Integrable (fun x ↦ η x * (Real.exp (2 * v x) - 1 - 2 * v x)) μ) (t : ℝ) :
     Integrable (fun x ↦ η x * (Real.exp (2 * (v x + t * φ x)) - 1 - 2 * (v x + t * φ x))) μ := by
   have hΦ : Continuous fun s : ℝ ↦ Real.exp (2 * s) - 1 - 2 * s := by fun_prop
   have hmeas : AEStronglyMeasurable
       (fun x ↦ η x * (Real.exp (2 * (v x + t * φ x)) - 1 - 2 * (v x + t * φ x))) μ :=
-    hη.mul (hΦ.comp_aestronglyMeasurable (hv.add (hφm.const_mul t)))
+    hη.mul (hΦ.comp_aestronglyMeasurable (hv.add (hφ.aestronglyMeasurable.const_mul t)))
   -- The mean value theorem on `[-|t|, |t|]` bounds the change of the density by `|t|` times the
   -- dominating function with `B = |t| M`.
   have hdiff : Integrable (fun x ↦
       η x * (Real.exp (2 * (v x + t * φ x)) - 1 - 2 * (v x + t * φ x)) -
         η x * (Real.exp (2 * v x) - 1 - 2 * v x)) μ := by
-    refine Integrable.mono' ((integrable_potentialBound (|t| * M) hφm hφM hφ hφv hpot).const_mul
+    refine Integrable.mono' ((integrable_potentialBound (|t| * M) hφM hφ hφv hpot).const_mul
       |t|) (hmeas.sub hpot.aestronglyMeasurable) (ae_of_all _ fun x ↦ ?_)
     have hmvt := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
       (f := fun s ↦ η x * (Real.exp (2 * (v x + s * φ x)) - 1 - 2 * (v x + s * φ x)))
@@ -164,7 +164,7 @@ private theorem integrable_potential_add_mul (hη : AEStronglyMeasurable η μ)
 `∫ η (2 exp (2v) - 2) φ` at `t = 0`, and the integrand of the derivative is integrable. -/
 private theorem hasDerivAt_integral_potential_add_mul (hη : AEStronglyMeasurable η μ)
     (hη₀ : ∀ x, 0 ≤ η x) (hη₁ : ∀ x, η x ≤ 1) (hv : AEStronglyMeasurable v μ)
-    (hφm : AEStronglyMeasurable φ μ) (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
+    (hφM : ∀ x, |φ x| ≤ M) (hφ : Integrable φ μ)
     (hφv : Integrable (fun x ↦ φ x * v x) μ)
     (hpot : Integrable (fun x ↦ η x * (Real.exp (2 * v x) - 1 - 2 * v x)) μ) :
     Integrable (fun x ↦ η x * (2 * Real.exp (2 * v x) - 2) * φ x) μ ∧
@@ -178,10 +178,11 @@ private theorem hasDerivAt_integral_potential_add_mul (hη : AEStronglyMeasurabl
       (Real.exp (2 * M) * (η x * (Real.exp (2 * v x) - 1 - 2 * v x) + 1 + 2 * |v x|) + 1))
     (Metric.ball_mem_nhds 0 one_pos)
     (Eventually.of_forall fun t ↦
-      (integrable_potential_add_mul hη hη₀ hη₁ hv hφm hφM hφ hφv hpot t).aestronglyMeasurable)
-    (integrable_potential_add_mul hη hη₀ hη₁ hv hφm hφM hφ hφv hpot 0)
-    ((hη.mul (hexp.comp_aestronglyMeasurable (hv.add (hφm.const_mul 0)))).mul hφm)
-    (ae_of_all _ fun x t ht ↦ ?_) (integrable_potentialBound M hφm hφM hφ hφv hpot)
+      (integrable_potential_add_mul hη hη₀ hη₁ hv hφM hφ hφv hpot t).aestronglyMeasurable)
+    (integrable_potential_add_mul hη hη₀ hη₁ hv hφM hφ hφv hpot 0)
+    ((hη.mul (hexp.comp_aestronglyMeasurable (hv.add (hφ.aestronglyMeasurable.const_mul 0)))).mul
+      hφ.aestronglyMeasurable)
+    (ae_of_all _ fun x t ht ↦ ?_) (integrable_potentialBound M hφM hφ hφv hpot)
     (ae_of_all _ fun x t _ ↦ hasDerivAt_mul_exp_sub_one_sub (η x) (v x) (φ x) t)
   · simpa using h
   · rw [mem_ball_zero_iff, Real.norm_eq_abs] at ht
@@ -196,15 +197,6 @@ end Potential
 /-! ### The weak Euler–Lagrange equation -/
 
 variable {P : Polynomial ℂ}
-
-/-- If Taubes's functional is finite at `u ∈ H¹(ℂ)`, then the potential
-`h (exp (2u) - 1 - 2u)` of `u` is integrable. -/
-private theorem integrable_potential_of_ne_top {u : W1p (volume : Measure ℂ) ⊤ 2}
-    (hu : sobolevReducedFunctional P u ≠ ⊤) :
-    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-  by_contra hni
-  exact hu (sobolevReducedFunctional_eq_top hni)
 
 /-- Taubes's functional on the line `u + t w` in `H¹(ℂ)`, where the value of `w` is represented by
 a square-integrable function `φ`, at a parameter `t` where the potential is integrable: the
@@ -285,15 +277,15 @@ theorem exists_hasDerivAt_sobolevReducedFunctional_add_smul (hm : 0 < P.natDegre
   have hφM (z : ℂ) : |φ z| ≤ M := by simpa using hM z
   have hφi : Integrable φ := hφ.continuous.integrable_of_hasCompactSupport hφc
   have hφv : Integrable fun z ↦ φ z * v z := hφ2.integrable_mul hv2
-  have hpot := integrable_potential_of_ne_top hu
+  have hpot := sobolevReducedFunctional_ne_top_iff.1 hu
   obtain ⟨hF'int, hF'⟩ := hasDerivAt_integral_potential_add_mul hη.aestronglyMeasurable hη₀ hη₁
-    hv2.aestronglyMeasurable hφi.aestronglyMeasurable hφM hφi hφv hpot
+    hv2.aestronglyMeasurable hφM hφi hφv hpot
   -- The functional along the line, as a real function of `t`.
   refine ⟨fun t ↦ ‖W1p.gradient u + t • W1p.gradient w‖ ^ 2 / 2 +
     (∫ z, η z * (Real.exp (2 * (v z + t * φ z)) - 1 - 2 * (v z + t * φ z))) / 16 +
     ((∫ z, c z * v z) + t * ∫ z, c z * φ z), fun t ↦ sobolevReducedFunctional_add_smul_eq hm hφ2
     hwv (integrable_potential_add_mul hη.aestronglyMeasurable hη₀ hη₁ hv2.aestronglyMeasurable
-      hφi.aestronglyMeasurable hφM hφi hφv hpot t), ?_⟩
+      hφM hφi hφv hpot t), ?_⟩
   -- Differentiate the Dirichlet energy, the potential and the linear term.
   have hnorm : HasDerivAt (fun t : ℝ ↦ ‖W1p.gradient u + t • W1p.gradient w‖ ^ 2 / 2)
       (⟪W1p.gradient u, W1p.gradient w⟫_ℝ) 0 := by
@@ -340,10 +332,8 @@ theorem integral_inner_gradient_eq_neg_integral_of_forall_le (hm : 0 < P.natDegr
       -∫ z, ((‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * Real.exp (2 * W1p.value u z) - 1) / 8 +
         2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) * φ z := by
   -- Represent `φ` in `H¹(ℂ)`.
-  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn
-    (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) hφ.contDiffOn
-    ((hφ.continuous.memLp_of_hasCompactSupport hφc).restrict _) (hφc.memLp_gradient hφ)
-  simp only [Opens.coe_top, Measure.restrict_univ] at hwv hwg
+  obtain ⟨w, hwv, hwg, -, -⟩ := W1p.exists_value_gradient_ae_eq_of_hasCompactSupport
+    (mu := (volume : Measure ℂ)) (p := 2) hφ hφc
   -- The functional is finite at `u`, since `I(u) ≤ I(0) = 0`.
   obtain ⟨G, hG, hG'⟩ := exists_hasDerivAt_sobolevReducedFunctional_add_smul hm
     (ne_top_of_le_ne_top (by simp) (hu 0)) hφ hφc hwv hwg

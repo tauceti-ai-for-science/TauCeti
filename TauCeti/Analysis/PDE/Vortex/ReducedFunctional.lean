@@ -150,8 +150,9 @@ private theorem le_div_two_add_of_pow_four_le {x D M : ℝ} (hD : 0 ≤ D) (hM :
 where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. The first two terms are finite for
 every `u`. The potential is a nonnegative extended integral, so `I(u) = ⊤` exactly when it is not
 integrable (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
-`TauCeti.Vortex.sobolevReducedFunctional_eq_top`). On compactly supported `C¹` functions this is
-`TauCeti.Vortex.reducedFunctional`
+`TauCeti.Vortex.sobolevReducedFunctional_eq_top`,
+`TauCeti.Vortex.sobolevReducedFunctional_ne_top_iff`). On compactly supported `C¹` functions this
+is `TauCeti.Vortex.reducedFunctional`
 (`TauCeti.Vortex.sobolevReducedFunctional_eq_reducedFunctional`). -/
 def sobolevReducedFunctional (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) : EReal :=
   ((‖W1p.gradient u‖ ^ 2 / 2 + ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
@@ -232,6 +233,16 @@ theorem sobolevReducedFunctional_eq_top {u : W1p (volume : Measure ℂ) ⊤ 2}
       (ae_of_all _ (potential_nonneg _))).2 (lt_top_iff_ne_top.2 hne)⟩
   rw [sobolevReducedFunctional_def, hinf, ENNReal.top_div_of_ne_top (by norm_num),
     EReal.coe_ennreal_top, EReal.coe_add_top]
+
+/-- Taubes's functional on `H¹(ℂ)` is finite exactly when the potential
+`h (exp (2u) - 1 - 2u)` is integrable. -/
+theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 2} :
+    sobolevReducedFunctional P u ≠ ⊤ ↔
+      Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
+  refine ⟨fun hu ↦ not_not.1 fun hni ↦ hu (sobolevReducedFunctional_eq_top hni), fun hu ↦ ?_⟩
+  rw [sobolevReducedFunctional_eq_coe hu]
+  exact EReal.coe_ne_top _
 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
@@ -462,15 +473,15 @@ theorem exists_le_sobolevReducedFunctional (hm : 0 < P.natDegree) :
     ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, (C : EReal) ≤ sobolevReducedFunctional P u := by
   obtain ⟨C, hC⟩ := exists_le_two_mul_sobolevReducedFunctional_add hm
   refine ⟨-C / 2, fun u ↦ ?_⟩
-  by_cases hpint : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
-  · have h := hC u hpint
-    have hE := integral_potential_nonneg (P := P) (W1p.value u)
-    rw [sobolevReducedFunctional_eq_coe hpint, ← coe_two_mul_add, EReal.coe_le_coe_iff] at h
-    rw [sobolevReducedFunctional_eq_coe hpint, EReal.coe_le_coe_iff]
-    nlinarith [sq_nonneg ‖W1p.gradient u‖]
-  · rw [sobolevReducedFunctional_eq_top hpint]
+  rcases eq_or_ne (sobolevReducedFunctional P u) ⊤ with htop | htop
+  · rw [htop]
     exact le_top
+  have hpint := sobolevReducedFunctional_ne_top_iff.1 htop
+  have h := hC u hpint
+  have hE := integral_potential_nonneg (P := P) (W1p.value u)
+  rw [sobolevReducedFunctional_eq_coe hpint, ← coe_two_mul_add, EReal.coe_le_coe_iff] at h
+  rw [sobolevReducedFunctional_eq_coe hpint, EReal.coe_le_coe_iff]
+  nlinarith [sq_nonneg ‖W1p.gradient u‖]
 
 /-- **Bounded sublevel sets.** For a complex polynomial `P` of degree at least one and every
 level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(ℂ)`; here `I` is
@@ -481,11 +492,8 @@ theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t 
   obtain ⟨γ, hγ, hsq⟩ := exists_sq_norm_value_sq_le hm
   set B := 2 * t + C₁
   refine ⟨√(2 * B + 1 + γ * (1 + B) ^ 3), fun u ht ↦ ?_⟩
-  have hpint : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-    by_contra hpint
-    rw [sobolevReducedFunctional_eq_top hpint] at ht
-    exact EReal.coe_ne_top t (top_le_iff.mp ht)
+  have hpint :=
+    sobolevReducedFunctional_ne_top_iff.1 (ne_top_of_le_ne_top (EReal.coe_ne_top t) ht)
   set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
     (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
   set G := ‖W1p.gradient u‖
@@ -519,11 +527,7 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   obtain ⟨C, hC⟩ := exists_le_two_mul_sobolevReducedFunctional_add hm
   refine ⟨C, fun w hw hws ↦ ?_⟩
   obtain ⟨u, hI, -, hG, hE⟩ := exists_sobolevReducedFunctional_eq (P := P) hw hws
-  have hpint : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-    by_contra hpint
-    rw [sobolevReducedFunctional_eq_top hpint] at hI
-    exact EReal.coe_ne_top _ hI.symm
+  have hpint := sobolevReducedFunctional_ne_top_iff.1 (hI ▸ EReal.coe_ne_top _)
   have h := hC u hpint
   rw [hI, hG, hE, ← coe_two_mul_add, EReal.coe_le_coe_iff] at h
   exact h
