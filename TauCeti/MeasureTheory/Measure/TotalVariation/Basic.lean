@@ -45,7 +45,10 @@ estimates into total-variation estimates.
 * `MeasureTheory.etvDist_le_two_mul_iff`: for finite measures of equal total mass,
   `etvDist μ ν ≤ 2 * c` if and only if every measurable event satisfies `μ A ≤ ν A + c`;
 * `MeasureTheory.tvDist_dirac_left`: the distance from a point mass to a probability measure
-  is twice its mass outside the point.
+  is twice its mass outside the point;
+* `MeasureTheory.iSup_map_sub_map_le`, `MeasureTheory.etvDist_map_le`,
+  `MeasureTheory.tvDist_map_le`: the largest excess and the total variation distance do not
+  increase under pushforward along a measurable map.
 -/
 
 public section
@@ -139,5 +142,34 @@ omit [IsFiniteMeasure ν] in
   rw [tvDist, etvDist_dirac_left, ENNReal.toReal_mul,
     ENNReal.toReal_sub_of_le (prob_le_one) (by simp)]
   simp [Measure.real]
+
+omit [IsFiniteMeasure μ] [IsFiniteMeasure ν] in
+/-- **The excess contracts under measurable maps.** Pushing two measures forward along a
+measurable map does not increase the largest excess of one over the other: every measurable
+event downstairs pulls back to a measurable event upstairs with the same masses. -/
+theorem iSup_map_sub_map_le {β : Type*} [MeasurableSpace β] {f : α → β} (hf : Measurable f) :
+    ⨆ (B : Set β) (_ : MeasurableSet B), μ.map f B - ν.map f B ≤
+      ⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A := by
+  refine iSup₂_le fun B hB => ?_
+  rw [Measure.map_apply hf hB, Measure.map_apply hf hB]
+  exact le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) => μ A - ν A) (f ⁻¹' B) (hf hB)
+
+omit [IsFiniteMeasure μ] [IsFiniteMeasure ν] in
+/-- **Total variation contracts under measurable maps.** Pushing two measures forward along a
+measurable map does not increase their extended total variation distance. When one of the
+measures is infinite the right-hand side is `∞`. -/
+theorem etvDist_map_le {β : Type*} [MeasurableSpace β] {f : α → β} (hf : Measurable f) :
+    etvDist (μ.map f) (ν.map f) ≤ etvDist μ ν := by
+  by_cases h : IsFiniteMeasure μ ∧ IsFiniteMeasure ν
+  · obtain ⟨_, _⟩ := h
+    rw [etvDist_eq_iSup_sub_add_iSup_sub, etvDist_eq_iSup_sub_add_iSup_sub]
+    exact add_le_add (iSup_map_sub_map_le hf) (iSup_map_sub_map_le hf)
+  · rw [etvDist_of_not_isFiniteMeasure h]
+    exact le_top
+
+/-- The real-valued total variation distance contracts under measurable maps. -/
+theorem tvDist_map_le {β : Type*} [MeasurableSpace β] {f : α → β} (hf : Measurable f) :
+    tvDist (μ.map f) (ν.map f) ≤ tvDist μ ν :=
+  ENNReal.toReal_mono (etvDist_ne_top μ ν) (etvDist_map_le hf)
 
 end MeasureTheory
