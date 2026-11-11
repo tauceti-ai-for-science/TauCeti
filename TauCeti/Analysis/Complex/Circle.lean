@@ -36,6 +36,7 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.eq_one_of_re_eq_one`: the only point of the circle with real part `1` is `1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -75,6 +76,11 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
     z.re ^ 2 + z.im ^ 2 = 1 := by
   simpa using re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
+
+/-- The only point of the circle with real part `1` is `1`. -/
+theorem eq_one_of_re_eq_one {z : Circle} (hz : (z : ℂ).re = 1) : z = 1 :=
+  Circle.ext (Complex.ext (by simpa using hz)
+    (by simpa using Complex.abs_re_eq_norm.1 (by simp [hz])))
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
