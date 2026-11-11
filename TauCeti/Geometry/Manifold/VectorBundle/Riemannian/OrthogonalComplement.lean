@@ -13,12 +13,13 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.Basis.Fin
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
-# The orthogonal complement of a nowhere-zero section or an orthonormal family
+# Orthogonal complements of subbundles, nowhere-zero sections and orthonormal families
 
 Let `V` be a smooth complex vector bundle of complex rank `k + 1` over a real manifold, with a
 smooth Hermitian metric `g`, and let `s` be a nowhere-zero smooth section. The Hermitian
@@ -57,6 +58,14 @@ The inverse sends `v` to its coefficients `⟪s i x, v⟫` and to `v - ∑ i, �
 Near a point, the orthogonal projections of a local frame of `V` read off from a trivialization span
 the complement; a linearly independent subfamily at the point stays linearly independent nearby,
 and has the right size, so it is a local frame of the complement.
+
+For a real `C^n` Riemannian vector bundle `V` with finite-dimensional model fibre `F`, the same
+argument shows that the orthogonal complements `(W x)ᗮ` of a family of subspaces `W` with `C^n`
+local frames of size `k` have `C^n` local frames of size `dim F - k`
+(`TauCeti.HasLocalContMDiffSubbundleFrames.orthogonal`), so they form a `C^n` subbundle. Near a
+point `x₀`, Gram–Schmidt turns a local frame of `W` into a `C^n` orthonormal frame `u`, a basis of
+`(W x₀)ᗮ` is extended to sections `σ j` with constant coordinates in a trivialization, and
+`σ j - ∑ i, ⟪u i, σ j⟫ • u i` is the required frame near `x₀`.
 
 ## References
 
@@ -690,3 +699,92 @@ theorem trivialProdOrthogonalSpanFamilyDiffeomorph_symm_apply
   (rfl)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+open InnerProductSpace
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω} [ContMDiffVectorBundle n F V IB]
+  [IsContMDiffRiemannianBundle IB n F V]
+
+/-- **Orthogonal complements of smooth subbundles.** In a `C^n` Riemannian vector bundle with
+finite-dimensional model fibre `F`, if a family of subspaces `W x` has `C^n` local frames of size
+`k` near every point, then so do its orthogonal complements `(W x)ᗮ`, with size `dim F - k`.
+Hence they form a `C^n` subbundle
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
+theorem HasLocalContMDiffSubbundleFrames.orthogonal {k : ℕ} {W : Π x, Submodule ℝ (V x)}
+    (hW : HasLocalContMDiffSubbundleFrames IB n F (Fin k) W) :
+    HasLocalContMDiffSubbundleFrames IB n F (Fin (finrank ℝ F - k)) fun x ↦ (W x)ᗮ := by
+  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
+  obtain ⟨U₀, hU₀, hx₀U₀, X, hX, hXn⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hW x₀
+  let e := trivializationAt F V x₀
+  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  set r := finrank ℝ F - k
+  have hr {x : B} (hx : x ∈ U₀) : finrank ℝ (W x)ᗮ = r := by
+    have : FiniteDimensional ℝ (V x) := VectorBundle.finiteDimensional ℝ F V x
+    have h := (W x).finrank_add_finrank_orthogonal
+    rw [hX.finrank_eq hx, Fintype.card_fin, VectorBundle.finrank_eq ℝ F V x] at h
+    omega
+  -- A `C^n` orthonormal frame `u` of `W` near `x₀`, by Gram–Schmidt.
+  let u : Fin k → Π x, V x := fun i x ↦ gramSchmidtNormed ℝ (X · x) i
+  have hu (i : Fin k) : CMDiff[U₀] n (T% (u i)) := fun x hx ↦
+    (ContMDiffAt.gramSchmidtNormed_bundle (fun j ↦ (hXn j).contMDiffAt (hU₀.mem_nhds hx))
+      (hX.linearIndependent hx) i).contMDiffWithinAt
+  have hmem {x : B} (hx : x ∈ U₀) {w : V x} : w ∈ (W x)ᗮ ↔ ∀ i, ⟪u i x, w⟫_ℝ = 0 := by
+    rw [← hX.span_eq hx, ← span_gramSchmidt, ← span_gramSchmidtNormed_range]
+    exact (Submodule.mem_orthogonalBilin_span (B := innerₛₗ ℝ)).trans Set.forall_mem_range
+  -- A basis `β` of `(W x₀)ᗮ`, extended to sections `σ j` with constant coordinates in `e`.
+  have : FiniteDimensional ℝ (V x₀) := VectorBundle.finiteDimensional ℝ F V x₀
+  let β := Module.finBasisOfFinrankEq ℝ (W x₀)ᗮ (hr hx₀U₀)
+  let σ : Fin r → Π x, V x := fun j x ↦ e.symm x (e ⟨x₀, β j⟩).2
+  -- Removing the components of `σ j` along `u` gives a `C^n` section `Y j` of `Wᗮ`.
+  let Y : Fin r → Π x, V x := fun j x ↦ σ j x - ∑ i, ⟪u i x, σ j x⟫_ℝ • u i x
+  set U₁ := U₀ ∩ e.baseSet
+  have hY (j : Fin r) : CMDiff[U₁] n (T% (Y j)) := by
+    have hσ : CMDiff[U₁] n (T% (σ j)) :=
+      (Manifold.contMDiffOn_symm_baseSet (I := IB) (e := e) _).mono inter_subset_right
+    have hu' (i : Fin k) : CMDiff[U₁] n (T% (u i)) := (hu i).mono inter_subset_left
+    exact hσ.sub_section (.sum_section (t := fun i x ↦ ⟪u i x, σ j x⟫_ℝ • u i x)
+      fun i _ ↦ ((hu' i).inner_bundle hσ).smul_section (hu' i))
+  have hYmem (j : Fin r) {x : B} (hx : x ∈ U₀) : Y j x ∈ (W x)ᗮ :=
+    (hmem hx).mpr fun i ↦ by
+      rw [inner_sub_right,
+        (gramSchmidtNormed_orthonormal (hX.linearIndependent hx)).inner_right_fintype, sub_self]
+  have hY₀ (j : Fin r) : Y j x₀ = β j := by
+    have hσ₀ : σ j x₀ = β j := by simp [σ, e.symm_apply_apply_mk, hx₀]
+    have h0 (i : Fin k) : ⟪u i x₀, (β j : V x₀)⟫_ℝ = 0 := (hmem hx₀U₀).mp (β j).2 i
+    simp [Y, hσ₀, h0]
+  -- Read in the trivialization, linear independence of the `Y j` is an open condition.
+  let T : B → Fin r → F := fun x j ↦ (e ⟨x, Y j x⟩).2
+  have hT : ContinuousOn T U₁ := continuousOn_pi.mpr fun j ↦
+    continuous_snd.comp_continuousOn ((e.continuousOn).comp (hY j).continuousOn
+      fun x hx ↦ e.mem_source.mpr hx.2)
+  have hTli {x : B} (hx : x ∈ e.baseSet) :
+      LinearIndependent ℝ (T x) ↔ LinearIndependent ℝ (Y · x) := by
+    have : T x = (e.continuousLinearEquivAt ℝ x hx) ∘ (Y · x) :=
+      funext fun j ↦ (congrFun (e.continuousLinearEquivAt_apply ℝ x hx) _).symm
+    rw [this]
+    exact LinearMap.linearIndependent_iff (e.continuousLinearEquivAt ℝ x hx).toLinearMap
+      (LinearEquiv.ker _)
+  let U := U₁ ∩ T ⁻¹' {v | LinearIndependent ℝ v}
+  have hUli {x : B} (hx : x ∈ U) : LinearIndependent ℝ (Y · x) := (hTli hx.1.2).mp hx.2
+  have hli₀ : LinearIndependent ℝ (Y · x₀) := by
+    rw [show (Y · x₀) = (W x₀)ᗮ.subtype ∘ β from funext hY₀]
+    exact β.linearIndependent.map' (W x₀)ᗮ.subtype (W x₀)ᗮ.ker_subtype
+  refine ⟨U, hT.isOpen_inter_preimage (hU₀.inter e.open_baseSet)
+      isOpen_setOfPred_linearIndependent, ⟨⟨hx₀U₀, hx₀⟩, (hTli hx₀).mpr hli₀⟩, Y,
+    ⟨fun j ↦ ((hY j).mono inter_subset_left).continuousOn, hUli, fun {x} hx ↦ ?_⟩,
+    fun j ↦ (hY j).mono inter_subset_left⟩
+  -- `r` independent vectors of the `r`-dimensional space `(W x)ᗮ` span it.
+  have : FiniteDimensional ℝ (V x) := VectorBundle.finiteDimensional ℝ F V x
+  refine Submodule.eq_of_le_of_finrank_eq
+    (Submodule.span_le.mpr (range_subset_iff.mpr fun j ↦ hYmem j hx.1.1)) ?_
+  rw [finrank_span_eq_card (hUli hx), Fintype.card_fin, hr hx.1.1]
+
+end TauCeti
