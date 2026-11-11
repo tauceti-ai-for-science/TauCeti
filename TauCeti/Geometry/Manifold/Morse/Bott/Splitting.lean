@@ -44,7 +44,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.isCompl_negativeNormalSpace_positiveNormalSpace`: for a
-  Morse–Bott submanifold the normal space is their direct sum.
+  Morse–Bott submanifold the normal space is their direct sum, even when the two spaces are taken
+  relative to different fibre metrics.
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
@@ -145,13 +146,15 @@ variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
   (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
 
 /-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
-Since the normal Hessian is nondegenerate, the negative and positive normal spaces relative to any
-fibre metric are complementary. -/
-theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
-    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
+Since the normal Hessian is nondegenerate, the negative normal space relative to a fibre metric `g`
+and the positive normal space relative to a fibre metric `g'` are complementary; for `g' = g` this
+is the splitting of the normal space relative to `g`. -/
+theorem isCompl_negativeNormalSpace_positiveNormalSpace
+    (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) :=
   LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
-    (g.isSymm_toBilinForm_inner s) (g.pos s)
-    (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
+    (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s)
+    (g'.isSymm_toBilinForm_inner s) (g'.pos s) (h.ker_normalHessian hn s)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :

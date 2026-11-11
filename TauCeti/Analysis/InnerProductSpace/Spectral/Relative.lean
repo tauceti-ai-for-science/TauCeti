@@ -47,7 +47,8 @@ nondegenerate the negative and positive spectral subspaces are complementary.
   `LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi`: their dimensions are the negative
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
-  negative and positive spectral subspaces are complementary.
+  negative and positive spectral subspaces are complementary, even when they are taken relative
+  to two different positive definite forms.
 
 The Euclidean isometry is built from a `g`-orthogonal basis
 (`LinearMap.BilinForm.exists_orthogonal_basis`), and the spectral input is the point-spectral
@@ -246,18 +247,32 @@ theorem finrank_relativeSpectralSubspace_Ioi :
   rw [relativeSpectralSubspace_neg, neg_Iio, neg_zero] at h
   simpa using h
 
-/-- For nondegenerate `q`, the negative and positive relative spectral subspaces are
+/-- For nondegenerate `q`, the negative relative spectral subspace of `q` with respect to `g` and
+the positive one with respect to any positive definite symmetric `g'` are complementary. In
+particular, for `g' = g`, the negative and positive relative spectral subspaces are
 complementary. -/
-theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) :
-    IsCompl (g.relativeSpectralSubspace q (Iio 0)) (g.relativeSpectralSubspace q (Ioi 0)) := by
-  refine ⟨disjoint_relativeSpectralSubspace_of_pos hg hpos hq Iio_disjoint_Ioi_same,
-    codisjoint_iff.mpr ?_⟩
-  · have hsplit : (univ : Set ℝ) = (Iio 0 ∪ Ioi 0) ∪ {0} := by
-      ext x
-      simp
-    have h := relativeSpectralSubspace_univ hg hpos hq
-    rwa [hsplit, relativeSpectralSubspace_union, relativeSpectralSubspace_singleton,
-      relativeEigenspace_zero, hker, sup_bot_eq, relativeSpectralSubspace_union] at h
+theorem isCompl_relativeSpectralSubspace_Iio_Ioi {g' : LinearMap.BilinForm ℝ V} (hg' : g'.IsSymm)
+    (hpos' : ∀ v, v ≠ 0 → 0 < g' v v) (hker : LinearMap.ker q = ⊥) :
+    IsCompl (g.relativeSpectralSubspace q (Iio 0)) (g'.relativeSpectralSubspace q (Ioi 0)) := by
+  -- With respect to `g'` alone, the negative and positive subspaces span `V`.
+  have hsplit : (univ : Set ℝ) = (Iio 0 ∪ Ioi 0) ∪ {0} := by
+    ext x
+    simp
+  have h := relativeSpectralSubspace_univ hg' hpos' hq
+  rw [hsplit, relativeSpectralSubspace_union, relativeSpectralSubspace_singleton,
+    relativeEigenspace_zero, hker, sup_bot_eq, relativeSpectralSubspace_union] at h
+  have hc : IsCompl (g'.relativeSpectralSubspace q (Iio 0))
+      (g'.relativeSpectralSubspace q (Ioi 0)) :=
+    ⟨disjoint_relativeSpectralSubspace_of_pos hg' hpos' hq Iio_disjoint_Ioi_same,
+      codisjoint_iff.mpr h⟩
+  -- The negative subspaces for `g` and `g'` have the same dimension, the negative index of `q`.
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).mpr (Submodule.disjoint_def.mpr fun v hv hv' ↦ ?_)
+  · rw [finrank_relativeSpectralSubspace_Iio hg hpos hq,
+      ← finrank_relativeSpectralSubspace_Iio hg' hpos' hq, Submodule.finrank_add_eq_of_isCompl hc]
+  · -- `q` is negative definite on the first subspace and positive definite on the second.
+    by_contra hv0
+    exact (apply_self_neg_of_mem_relativeSpectralSubspace_Iio hg hpos hq hv hv0).not_gt
+      (apply_self_pos_of_mem_relativeSpectralSubspace_Ioi hg' hpos' hq hv' hv0)
 
 end Real
 

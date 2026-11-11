@@ -431,8 +431,8 @@ theorem ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
   obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
   rw [negativeSpectralProjection_eq_projection hh hq hq'
     (LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi (isSymm_toBilinForm_iff.mpr hhs)
-      (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq)
-      (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])),
+      (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq) (isSymm_toBilinForm_iff.mpr hhs)
+      (fun v hv ↦ hhpos v hv) (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])),
     LinearMap.coe_toContinuousLinearMap, Submodule.ker_projection]
 
 /-! ### Smooth dependence -/

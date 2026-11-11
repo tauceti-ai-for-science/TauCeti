@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.LinearAlgebra.Projection.Intertwiner
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -47,6 +48,17 @@ spaces in the trivialization
 (`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`), and a `C^k`
 family of operators of constant rank has `C^k` local frames of its ranges
 (`Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`).
+
+Up to isomorphism the subbundles do not depend on the metric either. For two `C^k` fibre metrics
+`g₀` and `g₁`, the negative normal space for `g₀` and the positive normal space for `g₁` are
+complementary, since the normal Hessian is negative definite on the first and positive definite on
+the second. So for the projections `π₀` and `π₁` onto the negative normal spaces along the
+positive ones, the intertwining operators `π₁ π₀ + (1 - π₁) (1 - π₀)` form a `C^k` family of linear
+automorphisms of the normal spaces carrying `ν⁻(g₀)` onto `ν⁻(g₁)` and `ν⁺(g₀)` onto `ν⁺(g₁)`
+(`LinearMap.IsIdempotentElem.bijective_mul_add_one_sub_mul_one_sub`;
+`exists_contMDiff_map_negativeNormalSpace_eq_and_map_positiveNormalSpace_eq`, in the namespace
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`). In the trivialization they read
+`p₁ p₀ + (1 - p₁) (1 - p₀)` for the two families of projections `p₀` and `p₁` of `P`.
 
 ## References
 
@@ -271,5 +283,148 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace_of_preconnectedSpac
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   h.hasLocalContMDiffSubbundleFrames_positiveNormalSpace hn hk hf hdim g fun s ↦
     (h.neg.isLocallyConstant_manifoldMorseIndex hn).apply_eq_of_preconnectedSpace s s₀
+
+omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ P] in
+/-- Read in a trivialization, the projection of a normal space onto the negative normal space
+along the positive one is the projection `p` of the fibre model with the corresponding range and
+kernel. -/
+private theorem apply_projection_negativeNormalSpace
+    (h : i.IsNondegenerateCriticalSubmanifold f) [IsManifold I 2 M]
+    (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {s : S}
+    (L : i.NormalSpace s hn ≃ₗ[ℝ] P) {p : P →ₗ[ℝ] P} (hp : IsIdempotentElem p)
+    (hN : h.negativeNormalSpace hn g s = (LinearMap.range p).map (L.symm : P →ₗ[ℝ] _))
+    (hK : h.positiveNormalSpace hn g s = (LinearMap.ker p).map (L.symm : P →ₗ[ℝ] _))
+    (x : i.NormalSpace s hn) :
+    L ((h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s) x) = p (L x) := by
+  -- Split `x = a + b` into its negative and positive parts; `L` carries them into the range and
+  -- the kernel of `p`.
+  obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp
+    ((h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s).codisjoint.eq_top ▸
+      Submodule.mem_top : x ∈ h.negativeNormalSpace hn g s ⊔ h.positiveNormalSpace hn g s)
+  obtain ⟨y, hy, rfl⟩ := hN ▸ ha
+  obtain ⟨z, hz, rfl⟩ := hK ▸ hb
+  rw [LinearEquiv.coe_coe] at ha hb
+  simp only [map_add, Submodule.projection_apply_of_mem_left _ ha,
+    Submodule.projection_apply_of_mem_right _ hb, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+    add_zero, (LinearMap.IsIdempotentElem.mem_range_iff hp).mp hy, LinearMap.mem_ker.mp hz]
+
+/-- **The negative and positive normal bundles do not depend on the metric, up to isomorphism.**
+Let `i` be a nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and
+`i` of class `C^{k+1}`, and let `g₀` and `g₁` be two `C^k` fibre metrics on the normal bundle, with
+fibre model `P`. Then there is a `C^k` family of linear automorphisms `e s` of the normal spaces
+which carries the negative and positive normal spaces relative to `g₀` onto those relative to
+`g₁`. By `TauCeti.bundleDiffeomorph` it is a `C^k` diffeomorphism of the total space of the normal
+bundle over the identity of `S`, carrying the negative normal bundle `ν⁻(g₀)` onto `ν⁻(g₁)` and the
+positive normal bundle `ν⁺(g₀)` onto `ν⁺(g₁)`. -/
+theorem exists_contMDiff_map_negativeNormalSpace_eq_and_map_positiveNormalSpace_eq
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g₀ g₁ : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ∃ e : ∀ s, i.NormalSpace s hn ≃L[ℝ] i.NormalSpace s hn,
+      ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
+        (fun v : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
+          TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) v.proj (e v.proj v.2)) ∧
+      ∀ s, (h.negativeNormalSpace hn g₀.toRiemannianMetric s).map
+            (e s : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn) =
+          h.negativeNormalSpace hn g₁.toRiemannianMetric s ∧
+        (h.positiveNormalSpace hn g₀.toRiemannianMetric s).map
+            (e s : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn) =
+          h.positiveNormalSpace hn g₁.toRiemannianMetric s := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  set G₀ := g₀.toRiemannianMetric
+  set G₁ := g₁.toRiemannianMetric
+  -- The projections onto the negative normal spaces along the positive ones.
+  let proj (G : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+      Module.End ℝ (i.NormalSpace s hn) :=
+    (h.negativeNormalSpace hn G s).projection (h.positiveNormalSpace hn G s)
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn G G s)
+  have hproj (G : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+      IsIdempotentElem (proj G s) :=
+    Submodule.isIdempotentElem_projection _
+  have hrange (G : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+      LinearMap.range (proj G s) = h.negativeNormalSpace hn G s :=
+    Submodule.range_projection _
+  have hker (G : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+      LinearMap.ker (proj G s) = h.positiveNormalSpace hn G s :=
+    Submodule.ker_projection _
+  have hbij (s : S) : Function.Bijective
+      ⇑(proj G₁ s * proj G₀ s + (1 - proj G₁ s) * (1 - proj G₀ s)) :=
+    LinearMap.IsIdempotentElem.bijective_mul_add_one_sub_mul_one_sub (hproj G₀ s) (hproj G₁ s)
+      (by rw [hrange, hker]; exact h.isCompl_negativeNormalSpace_positiveNormalSpace hn G₀ G₁ s)
+      (by
+        rw [hker, hrange]
+        exact (h.isCompl_negativeNormalSpace_positiveNormalSpace hn G₁ G₀ s).symm)
+  let e (s : S) : i.NormalSpace s hn ≃L[ℝ] i.NormalSpace s hn :=
+    (LinearEquiv.ofBijective _ (hbij s)).toContinuousLinearEquiv
+  have he (s : S) : ⇑(e s) = ⇑(proj G₁ s * proj G₀ s + (1 - proj G₁ s) * (1 - proj G₀ s)) := rfl
+  have he' (s : S) : (e s : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn) =
+      proj G₁ s * proj G₀ s + (1 - proj G₁ s) * (1 - proj G₀ s) := rfl
+  refine ⟨e, ?_, fun s ↦ ⟨?_, ?_⟩⟩
+  · have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
+    let := i.normalSpaceContMDiffVectorBundle hn hk hdim
+    refine (contMDiff_hom_bundle_iff fun s ↦
+      (e s : i.NormalSpace s hn →L[ℝ] i.NormalSpace s hn)).1 fun s₀ ↦ ?_
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, ?_⟩
+    obtain ⟨p₀, hp₀, hps₀⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g₀ s₀
+    obtain ⟨p₁, hp₁, hps₁⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g₁ s₀
+    set t := trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀
+    have hs₀ : s₀ ∈ t.baseSet := mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀
+    -- In the trivialization, the automorphism is the intertwining operator of `p₀` and `p₁`.
+    have hT : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k
+        (fun s ↦ p₁ s * p₀ s + (1 - p₁ s) * (1 - p₀ s)) t.baseSet := by
+      simp only [ContinuousLinearMap.mul_def]
+      exact (hp₁.clm_comp hp₀).add ((contMDiffOn_const.sub hp₁).clm_comp
+        (contMDiffOn_const.sub hp₀))
+    refine (hT.contMDiffAt (t.open_baseSet.mem_nhds hs₀)).congr_of_eventuallyEq ?_
+    filter_upwards [t.open_baseSet.mem_nhds hs₀] with s hs
+    set L := t.continuousLinearEquivAt ℝ s hs
+    have hsymm : t.symmₗ ℝ s = (L.symm : P →ₗ[ℝ] i.NormalSpace s hn) := by
+      ext u
+      simp [L, t.symmₗ_apply hs]
+    -- `L` intertwines the projections of the normal space with `p₀` and `p₁`.
+    have key (G : RiemannianMetric fun s ↦ i.NormalSpace s hn) (p : P →L[ℝ] P)
+        (hp : IsIdempotentElem p)
+        (hN : h.negativeNormalSpace hn G s = p.range.map (t.symmₗ ℝ s))
+        (hK : h.positiveNormalSpace hn G s = p.ker.map (t.symmₗ ℝ s)) (x : i.NormalSpace s hn) :
+        L (proj G s x) = p (L x) :=
+      apply_projection_negativeNormalSpace hn h G L.toLinearEquiv (p := p)
+        congr(($hp : P →ₗ[ℝ] P)) (by rw [hN, hsymm]; rfl) (by rw [hK, hsymm]; rfl) x
+    obtain ⟨hi₀, hN₀, hK₀, -⟩ := hps₀ s hs
+    obtain ⟨hi₁, hN₁, hK₁, -⟩ := hps₁ s hs
+    ext u
+    obtain ⟨x, rfl⟩ := L.surjective u
+    rw [ContinuousLinearMap.inCoordinates_eq hs hs, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_coe]
+    -- The bundle chart at `s` in the coordinate expression is `L`.
+    rw [show t.continuousLinearEquivAt ℝ s hs = L from rfl, L.symm_apply_apply, he]
+    simp only [LinearMap.add_apply, mul_apply_eq_comp,
+      LinearMap.sub_apply, one_apply_eq_self, map_add, map_sub, key G₀ (p₀ s) hi₀ hN₀ hK₀,
+      key G₁ (p₁ s) hi₁ hN₁ hK₁]
+    simp only [add_apply, mul_apply_eq_comp, sub_apply, one_apply_eq_self, map_sub]
+  · rw [he', ← hrange G₀, ← hrange G₁]
+    exact LinearMap.IsIdempotentElem.map_range_mul_add_one_sub_mul_one_sub (hproj G₀ s) (hproj G₁ s)
+      (by rw [hrange, hker]; exact h.isCompl_negativeNormalSpace_positiveNormalSpace hn G₀ G₁ s)
+  · rw [he', ← hker G₀, ← hker G₁]
+    exact LinearMap.IsIdempotentElem.map_ker_mul_add_one_sub_mul_one_sub (hproj G₀ s) (hproj G₁ s)
+      (by
+        rw [hker, hrange]
+        exact (h.isCompl_negativeNormalSpace_positiveNormalSpace hn G₁ G₀ s).symm)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
