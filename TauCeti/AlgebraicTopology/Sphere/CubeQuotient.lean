@@ -63,6 +63,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`: `GenLoop.toSphere p` is
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
+* `GenLoop.bijective_toSphere_iff_of_apply_eq_comp`: reordering the coordinates of the cube does
+  not change whether `GenLoop.toSphere p` is bijective.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
   pole in every dimension, including `n = 0`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
@@ -531,6 +533,38 @@ theorem surjective_toSphere_iff (p : Ω^ (Fin n) X x) :
     Function.Surjective (toSphere p) ↔ Function.Surjective p := by
   have h : ⇑(toSphere p) ∘ cubeToSphere n = p := funext (toSphere_cubeToSphere p)
   rw [← h, (cubeToSphere_surjective n).of_comp_iff]
+
+/-- **Reordering the coordinates of the cube.** If the generalized loops `p` and `q` satisfy
+`p z = q (z ∘ g)` for a bijection `g` of the coordinates, then `GenLoop.toSphere p` is bijective
+exactly when `GenLoop.toSphere q` is. -/
+theorem bijective_toSphere_iff_of_apply_eq_comp {p q : Ω^ (Fin n) X x} {g : Fin n → Fin n}
+    (hg : Function.Bijective g) (hpq : ∀ z, p z = q (z ∘ g)) :
+    Function.Bijective (toSphere p) ↔ Function.Bijective (toSphere q) := by
+  let e := Equiv.ofBijective g hg
+  -- The reordering `z ↦ z ∘ g` of the cube is a bijection with inverse `z ↦ z ∘ g⁻¹`.
+  have hcomp (z : I^(Fin n)) : z ∘ e.symm ∘ g = z := by
+    funext i
+    simp only [Function.comp_apply]
+    exact congrArg z (e.symm_apply_apply i)
+  have hqp (z : I^(Fin n)) : q z = p (z ∘ e.symm) := by rw [hpq, Function.comp_assoc, hcomp]
+  have hb {z : I^(Fin n)} : z ∘ g ∈ Cube.boundary (Fin n) ↔ z ∈ Cube.boundary (Fin n) :=
+    Cube.comp_mem_boundary_iff hg
+  have hb' {z : I^(Fin n)} : z ∘ e.symm ∈ Cube.boundary (Fin n) ↔ z ∈ Cube.boundary (Fin n) :=
+    Cube.comp_mem_boundary_iff e.symm.bijective
+  simp only [Function.Bijective, injective_toSphere_iff, surjective_toSphere_iff]
+  refine ⟨fun ⟨hi, hs⟩ ↦ ⟨fun y z h ↦ ?_, fun w ↦ ?_⟩, fun ⟨hi, hs⟩ ↦ ⟨fun y z h ↦ ?_, fun w ↦ ?_⟩⟩
+  · rw [hqp, hqp] at h
+    rcases hi _ _ h with h | ⟨hy, hz⟩
+    · exact Or.inl (e.symm.surjective.injective_comp_right h)
+    · exact Or.inr ⟨hb'.1 hy, hb'.1 hz⟩
+  · obtain ⟨y, rfl⟩ := hs w
+    exact ⟨y ∘ g, (hpq y).symm⟩
+  · rw [hpq, hpq] at h
+    rcases hi _ _ h with h | ⟨hy, hz⟩
+    · exact Or.inl (hg.2.injective_comp_right h)
+    · exact Or.inr ⟨hb.1 hy, hb.1 hz⟩
+  · obtain ⟨y, rfl⟩ := hs w
+    exact ⟨y ∘ e.symm, by rw [hpq, Function.comp_assoc, hcomp]⟩
 
 variable (n X x) in
 /-- **Generalized loops are pointed maps out of the sphere.**  The bijection between generalized

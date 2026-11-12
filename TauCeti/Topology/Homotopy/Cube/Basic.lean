@@ -59,6 +59,8 @@ at `0` while releasing the first.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
+* `Cube.comp_mem_boundary_iff`: reordering the coordinates of the cube by a bijection preserves its
+  boundary.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
@@ -107,6 +109,14 @@ open scoped Topology unitInterval in
 @[simp]
 theorem Cube.boundary_eq_empty {N : Type*} [IsEmpty N] : Cube.boundary N = ∅ :=
   Set.eq_empty_of_forall_notMem fun _ ⟨i, _⟩ ↦ isEmptyElim i
+
+open scoped Topology unitInterval in
+/-- Reordering the coordinates of the cube by a bijection `g` preserves its boundary. -/
+theorem Cube.comp_mem_boundary_iff {N : Type*} {g : N → N} (hg : Function.Bijective g)
+    {z : I^N} : z ∘ g ∈ Cube.boundary N ↔ z ∈ Cube.boundary N := by
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨g i, hi⟩, fun ⟨i, hi⟩ ↦ ?_⟩
+  obtain ⟨j, rfl⟩ := hg.2 i
+  exact ⟨j, hi⟩
 
 open scoped Topology unitInterval in
 /-- The boundary of a cube over a finite index type is closed: it is the finite union of the

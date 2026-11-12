@@ -167,4 +167,20 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
+/-- For an `(n + 1)`-connected space, the Hurewicz class `ℤ ⟶ Hₙ₊₂(X; ℤ)` of `a ∈ πₙ₊₂(X, x)` is an
+isomorphism exactly when the multiples of `a` are bijective with `ℤ`, that is when `a` generates
+`πₙ₊₂(X, x)` freely. -/
+theorem isIso_hurewicz_iff_bijective_zsmul
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    (a : HomotopyGroup (Fin (n + 2)) X x) :
+    IsIso (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a) ↔
+      Function.Bijective fun z : ℤ ↦ z • Additive.ofMul a := by
+  have h : ⇑(hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom =
+      hurewiczAddEquiv hX ∘ fun z : ℤ ↦ z • Additive.ofMul a := by
+    funext (z : ℤ)
+    rw [Function.comp_apply, map_zsmul, hurewiczAddEquiv_apply, hurewiczHom_apply,
+      toMul_ofMul, ← map_zsmul, smul_eq_mul, mul_one]
+  rw [ConcreteCategory.isIso_iff_bijective]
+  exact (congrArg Function.Bijective h).to_iff.trans (EquivLike.comp_bijective _ _)
+
 end HomotopyGroup
