@@ -144,7 +144,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E :
 open sets `U` and `V` of the base need to be open: the preimages of `U` and `V` are open in the
 total space, hence in any subspace, and their traces on a subspace of nonzero vectors are the traces
 of the preimages themselves. -/
-private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
+theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' U)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' V)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E) →
@@ -204,7 +204,7 @@ variable {B : Type w} {F : Type*} {E : B → Type w} [TopologicalSpace (TotalSpa
 variable (F E U V) in
 /-- The Thom pair over `U ∪ V`, as the union pair of the Mayer–Vietoris sequence of the Thom pairs
 over `U` and over `V`. -/
-private def thomPairOverUnionIso :
+def thomPairOverUnionIso :
     TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
         (union_subset_union (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
           (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V)) ≅
@@ -218,10 +218,20 @@ private def thomPairOverUnionIso :
   hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
   inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
+@[simp]
+theorem thomPairOverUnionIso_hom_fst_apply (v : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V)) :
+    TopPair.Hom.fst (thomPairOverUnionIso F E U V).hom v = ⟨v.1, v.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnionIso_inv_fst_apply (v : π F E ⁻¹' (U ∪ V)) :
+    TopPair.Hom.fst (thomPairOverUnionIso F E U V).inv v = ⟨v.1, v.2⟩ :=
+  (rfl)
+
 variable (F E U V) in
 /-- The Thom pair over `U ∩ V`, as the intersection pair of the Mayer–Vietoris sequence of the Thom
 pairs over `U` and over `V`. -/
-private def thomPairOverInterIso :
+def thomPairOverInterIso :
     thomPairOver F E (U ∩ V) ≅
       TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
         (inter_subset_inter (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
@@ -233,9 +243,19 @@ private def thomPairOverInterIso :
   hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
   inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
+@[simp]
+theorem thomPairOverInterIso_hom_fst_apply (v : π F E ⁻¹' (U ∩ V)) :
+    TopPair.Hom.fst (thomPairOverInterIso F E U V).hom v = ⟨v.1, v.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverInterIso_inv_fst_apply (v : ↥(π F E ⁻¹' U ∩ π F E ⁻¹' V)) :
+    TopPair.Hom.fst (thomPairOverInterIso F E U V).inv v = ⟨v.1, v.2⟩ :=
+  (rfl)
+
 /-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `U` is the
 restriction from `U ∪ V` to `U`. -/
-private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_left :
+theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_left :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_left)
         (fun _ hx ↦ subset_union_left hx) ≫ (thomPairOverUnionIso F E U V).hom =
       thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V) :=
@@ -246,7 +266,7 @@ private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_left :
 
 /-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `V` is the
 restriction from `U ∪ V` to `V`. -/
-private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_right :
+theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_right :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_right)
         (fun _ hx ↦ subset_union_right hx) ≫ (thomPairOverUnionIso F E U V).hom =
       thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V) :=
@@ -257,7 +277,7 @@ private theorem ofInclusionMap_comp_thomPairOverUnionIso_hom_right :
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `U`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
-private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
+theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
     (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_left) (fun _ hx ↦ inter_subset_left hx) =
       thomPairOverMap F E (inter_subset_left : U ∩ V ⊆ U) :=
@@ -268,7 +288,7 @@ private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `V`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
-private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_right :
+theorem thomPairOverInterIso_hom_comp_ofInclusionMap_right :
     (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_right) (fun _ hx ↦ inter_subset_right hx) =
       thomPairOverMap F E (inter_subset_right : U ∩ V ⊆ V) :=
