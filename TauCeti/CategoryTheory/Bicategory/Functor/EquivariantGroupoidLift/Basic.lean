@@ -58,6 +58,9 @@ product `b * a`, so the commuting isomorphisms compare the two factorizations
   isomorphisms with the unit and composition isomorphisms along `Γ` and along `H`;
 * `TauCeti.EquivariantGroupoidLift.transportEquivalence`: for an isomorphism `g : p ≅ q`, the
   equivalence `C p ≌ C q` with functor `E_g` and inverse `E_(g⁻¹)`;
+* `TauCeti.EquivariantGroupoidLift.jointMapTransportIso`: the isomorphism
+  `F (g, 1) ⋙ e_q ≅ e_p ⋙ E_g` induced by the unit of `e_p`, compatible with the composition and
+  unit isomorphisms of transport and with the commuting isomorphisms;
 * `TauCeti.EquivariantGroupoidLift.transportPseudofunctor`: the transport functors, with their
   unit and composition isomorphisms, as a pseudofunctor `LocallyDiscrete Γ ⥤ᵖ Cat`;
 * `TauCeti.EquivariantGroupoidLift.endAction`: the action of the endomorphism monoid `End p` on
@@ -911,6 +914,99 @@ lemma transportCommIso_actId {p q : Γ} (g : p ⟶ q) (X : fiber actions p) :
   simp only [Category.assoc]
   rw [L.comparisonNaturality_actId, ← Functor.map_comp, Category.assoc,
     L.jointActCommIso_actId, ← Functor.map_comp, L.actInverseIso_actId]
+
+/-! ### Comparison of the joint functors with transport
+
+The fiber comparisons intertwine each joint functor `F (g, 1)` with the transport functor `E_g`,
+through the unit of the fiber comparison at the source. These comparisons respect the composition
+and unit isomorphisms of transport and the commuting isomorphisms with the actions. -/
+
+/-- The fiber comparisons intertwine the joint functor `F (g, 1)` with the transport functor
+`E_g = e_p⁻¹ ⋙ F (g, 1) ⋙ e_q`: the isomorphism `F (g, 1) ⋙ e_q ≅ e_p ⋙ E_g` is induced by
+the unit of the fiber comparison `e_p`. -/
+noncomputable def jointMapTransportIso {p q : Γ} (g : p ⟶ q) :
+    L.jointMap g ⋙ (L.fiberEquivalence q).functor ≅
+      (L.fiberEquivalence p).functor ⋙ L.transport g :=
+  Functor.isoWhiskerRight (L.fiberEquivalence p).unitIso
+    (L.jointMap g ⋙ (L.fiberEquivalence q).functor)
+
+@[simp]
+lemma jointMapTransportIso_hom_app {p q : Γ} (g : p ⟶ q) (Y : L.jointFiber p) :
+    (L.jointMapTransportIso g).hom.app Y =
+      (L.fiberEquivalence q).functor.map
+        ((L.jointMap g).map ((L.fiberEquivalence p).unit.app Y)) :=
+  (rfl)
+
+@[simp]
+lemma jointMapTransportIso_inv_app {p q : Γ} (g : p ⟶ q) (Y : L.jointFiber p) :
+    (L.jointMapTransportIso g).inv.app Y =
+      (L.fiberEquivalence q).functor.map
+        ((L.jointMap g).map ((L.fiberEquivalence p).unitInv.app Y)) :=
+  (rfl)
+
+/-- The comparisons `jointMapTransportIso` respect composition along `Γ`: they intertwine the
+composition comparison of the joint functors with the composition isomorphism of transport. -/
+@[reassoc]
+lemma jointMapTransportIso_hom_app_comp_transportComp_inv_app {p q r : Γ} (g : p ⟶ q)
+    (h : q ⟶ r) (gh : p ⟶ r) (hgh : g ≫ h = gh) (Y : L.jointFiber p) :
+    (L.jointMapTransportIso gh).hom.app Y ≫
+        (L.transportComp g h gh hgh).inv.app ((L.fiberEquivalence p).functor.obj Y) =
+      (L.fiberEquivalence r).functor.map ((L.jointMapComp g h gh hgh).hom.app Y) ≫
+        (L.jointMapTransportIso h).hom.app ((L.jointMap g).obj Y) ≫
+          (L.transport h).map ((L.jointMapTransportIso g).hom.app Y) := by
+  have nat := (L.jointMapComp g h gh hgh).hom.naturality ((L.fiberEquivalence p).unit.app Y)
+  have nat' := (L.fiberEquivalence q).unit.naturality
+    ((L.jointMap g).map ((L.fiberEquivalence p).unit.app Y))
+  simp only [Functor.comp_map, Functor.id_map, Functor.comp_obj, Functor.id_obj] at nat nat'
+  simp only [jointMapTransportIso_hom_app, transportComp_inv_app]
+  dsimp only [Functor.comp_obj, Functor.id_obj, transport_obj, transport_map]
+  simp only [← Functor.map_comp]
+  rw [reassoc_of% nat, ← Functor.map_comp, nat']
+
+/-- The comparison `jointMapTransportIso (𝟙 p)` intertwines the unit comparison of the joint
+functors with the unit isomorphism of transport. -/
+@[reassoc]
+lemma jointMapTransportIso_hom_app_comp_transportId_hom_app (p : Γ) (Y : L.jointFiber p) :
+    (L.jointMapTransportIso (𝟙 p)).hom.app Y ≫
+        (L.transportId p).hom.app ((L.fiberEquivalence p).functor.obj Y) =
+      (L.fiberEquivalence p).functor.map ((L.jointMapId p).hom.app Y) := by
+  have nat := (L.jointMapId p).hom.naturality ((L.fiberEquivalence p).unit.app Y)
+  simp only [Functor.id_obj, Functor.id_map, Functor.comp_obj] at nat
+  simp only [jointMapTransportIso_hom_app, transportId_hom_app]
+  dsimp only [Functor.comp_obj, Functor.id_obj, transport_obj]
+  rw [← Functor.map_comp_assoc, nat, Functor.map_comp, Category.assoc,
+    Equivalence.functor_unit_comp, Category.comp_id]
+
+/-- The comparisons `jointMapTransportIso` intertwine the commuting isomorphisms
+`F (𝟙 p, a) ⋙ F (g, 1) ≅ F (g, 1) ⋙ F (𝟙 q, a)` of the joint functors with the commuting
+isomorphisms `T_a ⋙ E_g ≅ E_g ⋙ T_a` of transport, through the naturality isomorphisms of the
+fiber comparisons. -/
+@[reassoc]
+lemma jointMapTransportIso_hom_app_comp_transportCommIso_hom_app {p q : Γ} (g : p ⟶ q)
+    (a : SingleObj.star H ⟶ SingleObj.star H) (Y : L.jointFiber p) :
+    (L.jointMapTransportIso g).hom.app ((L.jointAct p a).obj Y) ≫
+        (L.transport g).map ((L.comparisonNaturality p a).hom.app Y) ≫
+          (L.transportCommIso g a).hom.app ((L.fiberEquivalence p).functor.obj Y) =
+      (L.fiberEquivalence q).functor.map ((L.jointActCommIso g a).hom.app Y) ≫
+        (L.comparisonNaturality q a).hom.app ((L.jointMap g).obj Y) ≫
+          (act actions q a).map ((L.jointMapTransportIso g).hom.app Y) := by
+  -- Conjugating `actInverseIso` by the unit recovers the action of the joint functor.
+  have key : (L.fiberEquivalence p).unit.app ((L.jointAct p a).obj Y) ≫
+      (L.fiberEquivalence p).inverse.map ((L.comparisonNaturality p a).hom.app Y) ≫
+        (L.actInverseIso p a).hom.app ((L.fiberEquivalence p).functor.obj Y) =
+      (L.jointAct p a).map ((L.fiberEquivalence p).unit.app Y) := by
+    rw [← cancel_mono ((L.jointAct p a).map ((L.fiberEquivalence p).unitInv.app Y)),
+      Category.assoc, Category.assoc, L.inverse_map_comparisonNaturality_hom_app_comp,
+      ← Functor.map_comp]
+    simp
+  have nat₁ := (L.jointActCommIso g a).hom.naturality ((L.fiberEquivalence p).unit.app Y)
+  have nat₂ := (L.comparisonNaturality q a).hom.naturality
+    ((L.jointMap g).map ((L.fiberEquivalence p).unit.app Y))
+  simp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj] at nat₁ nat₂
+  simp only [jointMapTransportIso_hom_app, transportCommIso_hom_app]
+  dsimp only [Functor.comp_obj, Functor.id_obj, transport_obj, transport_map]
+  simp only [← Functor.map_comp_assoc, key]
+  rw [nat₁, Functor.map_comp, Category.assoc, nat₂]
 
 /-! ### The transport pseudofunctor and the action of the endomorphism monoid of an object -/
 

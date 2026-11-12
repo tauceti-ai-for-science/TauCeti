@@ -75,14 +75,9 @@ variable [∀ p, Preadditive (L.jointFiber p)]
 of an actual transport is equivalent to linearity of its joint-pseudofunctor presentation. -/
 lemma linear_transport_iff_jointMap {p q : Γ} (g : p ⟶ q) :
     (L.transport g).Linear R ↔ (L.jointMap g).Linear R := by
-  let F := L.jointMap g ⋙ (L.fiberEquivalence q).functor
   -- Inserting the unit of the source fiber equivalence compares a joint map with
-  -- its conjugate. The target is exactly the definition of the actual transport.
-  let e : L.jointMap g ⋙ (L.fiberEquivalence q).functor ≅
-      (L.fiberEquivalence p).functor ⋙ L.transport g :=
-    F.leftUnitor.symm ≪≫ Functor.isoWhiskerRight (L.fiberEquivalence p).unitIso F ≪≫
-      Functor.associator _ _ _
-  exact (Functor.linear_iff_of_comp_iso R _ _ _ _ e).symm
+  -- its conjugate, which is by definition the actual transport.
+  exact (Functor.linear_iff_of_comp_iso R _ _ _ _ (L.jointMapTransportIso g)).symm
 
 /-- If the joint fibers are scalar-linear and the fiber comparisons are scalar-linear
 functors, `L` is scalar-linear if and only if every `jointMap` is. -/
