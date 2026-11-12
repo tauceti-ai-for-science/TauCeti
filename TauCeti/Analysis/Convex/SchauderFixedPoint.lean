@@ -18,7 +18,8 @@ space and let `f` be a continuous self-map of `C` whose image `f '' C` has compa
 boundedness of `C` nor completeness of the space is needed: the closure of the image does the
 work of both. In particular every continuous self-map of a nonempty compact convex set has a
 fixed point (`TauCeti.schauderFixedPoint_compactConvex`), whatever the dimension of the ambient
-space.
+space, and so has every continuous self-map of the whole space with relatively compact range
+(`TauCeti.schauderFixedPoint_isCompact_closure_range`).
 
 The proof is Schauder's. Let `K` be the compact closure of `f '' C`; it lies in `C` because `C`
 is closed. For `ε > 0`, a partition of unity on `K` subordinate to a finite cover by `ε`-balls
@@ -46,6 +47,8 @@ a fixed point (`TauCeti.schaeferFixedPoint`).
 * `TauCeti.schauderFixedPoint_closedConvex_continuousOn`: Schauder's theorem for a function of
   the ambient space.
 * `TauCeti.schauderFixedPoint_closedConvex`: Schauder's theorem for a bundled self-map.
+* `TauCeti.schauderFixedPoint_isCompact_closure_range`: Schauder's theorem for a self-map of the
+  whole space with relatively compact range.
 * `TauCeti.schauderFixedPoint_compactConvex`: Schauder's theorem for compact convex sets.
 * `TauCeti.leraySchauderFixedPoint_closedBall`: the Leray–Schauder boundary condition on a ball.
 * `TauCeti.schaeferFixedPoint`: Schaefer's a priori bound form.
@@ -143,6 +146,15 @@ theorem schauderFixedPoint_closedConvex (hC : IsClosed C) (hconv : Convex ℝ C)
   obtain ⟨x, hx, hfx⟩ :=
     schauderFixedPoint_closedConvex_continuousOn hC hconv hne hgc hgC (himage ▸ hK)
   exact ⟨⟨x, hx⟩, Subtype.ext ((hg ⟨x, hx⟩).symm.trans hfx)⟩
+
+/-- **Schauder's fixed-point theorem on the whole space**: a continuous self-map of a real normed
+space whose range has compact closure has a fixed point. -/
+theorem schauderFixedPoint_isCompact_closure_range {T : E → E} (hT : Continuous T)
+    (hK : IsCompact (closure (range T))) : ∃ x, IsFixedPt T x := by
+  rw [← image_univ] at hK
+  obtain ⟨x, -, hx⟩ := schauderFixedPoint_closedConvex_continuousOn isClosed_univ convex_univ
+    univ_nonempty hT.continuousOn (mapsTo_univ _ _) hK
+  exact ⟨x, hx⟩
 
 /-- **Schauder's fixed-point theorem for compact convex sets**: every continuous self-map of a
 nonempty compact convex subset of a real normed space has a fixed point. Unlike
