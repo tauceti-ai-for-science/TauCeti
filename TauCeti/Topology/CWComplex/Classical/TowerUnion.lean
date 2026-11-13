@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.Topology.Category.TopCat.ClosedEmbedding
