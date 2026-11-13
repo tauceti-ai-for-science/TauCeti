@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Coherent
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
@@ -299,6 +300,17 @@ theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
   .inclusion (sublevel_mono f hab)
     ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
+
+/-- If `f` is continuous and every value of `f` lies strictly below some `a k`, then `X` carries
+the topology coherent with the sublevels `{f ≤ a k}`: each point has one of them as a
+neighbourhood. -/
+theorem isCoherentWith_sublevels {X β ι : Type*} [TopologicalSpace X] [LinearOrder β]
+    [TopologicalSpace β] [ClosedIciTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
+    (h : ∀ x, ∃ k, f x < a k) : IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) :=
+  .of_nhds fun x ↦ let ⟨k, hk⟩ := h x
+    ⟨_, mem_range_self k, Filter.mem_of_superset
+      ((isOpen_Iio.preimage hf).mem_nhds (show x ∈ f ⁻¹' Iio (a k) from hk))
+      fun _ (hy : f _ < a k) ↦ hy.le⟩
 
 /-- The sublevel pair `({f ≤ b}, {f ≤ a})` of a function `f` for `a ≤ b`, as a pair of subspaces
 of `X`. -/
