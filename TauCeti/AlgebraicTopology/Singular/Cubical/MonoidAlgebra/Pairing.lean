@@ -98,6 +98,22 @@ theorem cubicalChainPairing_lof_lof (f : C(X × Y, Z)) {p q : ℕ}
     cubicalChainModuleDesc_lof]
   rfl
 
+universe u in
+/-- **Pairing with a point is a push-forward**: pairing with the `0`-chain of a point `x` pushes
+chains forward along `f (x, ·)`. -/
+theorem cubicalChainPairing_lof_point {Y' Z' : Type u} [TopologicalSpace Y'] [TopologicalSpace Z']
+    (f : C(X × Y', Z')) (x : X) (n : cubicalChainModule Y' K R) :
+    cubicalChainPairing H K R f
+        (cubicalChainModuleLof X H R 0 (ofCube X R (SingularCube.point x))) n =
+      cubicalChainModuleLinearMap R
+        (f.comp ((ContinuousMap.const Y' x).prodMk (ContinuousMap.id Y'))) n := by
+  induction n using cubicalChainModule.induction_on with
+  | add n n' hn hn' => simp only [map_add, hn, hn']
+  | lof q c =>
+    rw [cubicalChainPairing_lof_lof, cubicalChainModuleLinearMap_lof,
+      ← cubicalChainModuleLof_cast (Nat.zero_add q), ← map_cast, crossProduct_point_left,
+      NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
 /-- **Associativity of pairings**: two ways of combining three factors that agree pointwise,
 `g (f (x, y), w) = g' (x, f' (y, w))`, give the same pairing of chains. -/
 theorem cubicalChainPairing_assoc {L W U T V : Type*} [TopologicalSpace W] [TopologicalSpace U]
