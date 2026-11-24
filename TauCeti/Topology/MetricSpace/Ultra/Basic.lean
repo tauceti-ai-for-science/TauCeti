@@ -32,8 +32,7 @@ theorem isTopologicalBasis_closedBall :
     TopologicalSpace.IsTopologicalBasis {s : Set X | ∃ x, ∃ r > 0, s = closedBall x r} :=
   TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds
     (by rintro _ ⟨x, r, hr, rfl⟩; exact isOpen_closedBall _ hr.ne') fun x u hx hu ↦ by
-      obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.1 hu x hx
-      exact ⟨closedBall x (ε / 2), ⟨x, ε / 2, half_pos hε, rfl⟩,
-        mem_closedBall_self (by positivity), (closedBall_subset_ball (half_lt_self hε)).trans hεu⟩
+      obtain ⟨ε, hε, hεu⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (hu.mem_nhds hx)
+      exact ⟨closedBall x ε, ⟨x, ε, hε, rfl⟩, mem_closedBall_self hε.le, hεu⟩
 
 end IsUltrametricDist

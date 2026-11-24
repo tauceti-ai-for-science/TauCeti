@@ -91,7 +91,8 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 section ChangeOfVariables
 
 variable [IsUltrametricDist E] [ProperSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-  (ν : Measure F) [ν.IsAddHaarMeasure] {f : E → F} {f' : E → E ≃L[𝕜] F} {J : E → ℝ≥0∞}
+  (ν : Measure F) [ν.IsAddLeftInvariant] [IsFiniteMeasureOnCompacts ν] {f : E → F}
+  {f' : E → E ≃L[𝕜] F} {J : E → ℝ≥0∞}
 
 /-- A closed ball around `x` of positive radius on which `f` approximates `f' x` closely enough
 for `ApproximatesLinearOn.image_closedBall_eq_vadd_image_of_isUltrametricDist`. -/
@@ -107,9 +108,8 @@ private theorem exists_isGoodBall {x : E} (hf' : HasStrictFDerivAt f (f' x : E �
   set N := ‖((f' x).symm : F →L[𝕜] E)‖₊
   have hN : 0 < N + 1 := by positivity
   obtain ⟨s, hs, hfs⟩ := hf'.approximates_deriv_on_nhds (Or.inr (inv_pos.2 hN))
-  obtain ⟨ε, hε, hεs⟩ := Metric.mem_nhds_iff.1 hs
-  refine ⟨ε / 2, half_pos hε, (N + 1)⁻¹, ?_,
-    hfs.mono_set ((closedBall_subset_ball (half_lt_self hε)).trans hεs)⟩
+  obtain ⟨ε, hε, hεs⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hs
+  refine ⟨ε, hε, (N + 1)⁻¹, ?_, hfs.mono_set hεs⟩
   rw [← div_eq_mul_inv]
   exact (div_lt_one hN).2 (lt_add_one N)
 
@@ -129,26 +129,31 @@ private theorem continuousOn_of_isGoodBall {x : E} {r : ℝ} (hgood : IsGoodBall
     ContinuousOn f (closedBall x r) :=
   hgood.2.choose_spec.2.continuousOn
 
+omit [IsFiniteMeasureOnCompacts ν] in
 include μ ν in
 /-- On a good ball around `x`, every closed sub-ball has image measure `J x` times its measure. -/
-private theorem image_closedBall_of_isGoodBall {x : E} (hJ : ∀ s, ν (f' x '' s) = J x * μ s)
-    {r : ℝ} (hgood : IsGoodBall f f' x r) {y : E} (hy : y ∈ closedBall x r) {t : ℝ}
-    (ht : t ≤ r) : ν (f '' closedBall y t) = J x * μ (closedBall y t) := by
+private theorem image_closedBall_of_isGoodBall {x : E}
+    (hJ : ∀ t : ℝ, ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t))
+    {r : ℝ} (hgood : IsGoodBall f f' x r) {y : E} {t : ℝ}
+    (hsub : closedBall y t ⊆ closedBall x r) :
+    ν (f '' closedBall y t) = J x * μ (closedBall y t) := by
   obtain ⟨-, c, hc, hf⟩ := hgood
-  have hsub : closedBall y t ⊆ closedBall x r :=
-    (closedBall_subset_closedBall ht).trans (IsUltrametricDist.closedBall_eq_of_mem hy).symm.subset
   exact (hf.mono_set hsub).measure_image_closedBall_eq_mul_of_isUltrametricDist μ ν hc (hJ _)
 
+omit [IsFiniteMeasureOnCompacts ν] in
 include μ ν in
 /-- The scaling factor at a point `y` of a good ball around `x` is the one at `x`. -/
-private theorem scale_eq_of_isGoodBall {x y : E} (hJx : ∀ s, ν (f' x '' s) = J x * μ s)
-    (hJy : ∀ s, ν (f' y '' s) = J y * μ s) (hf' : HasStrictFDerivAt f (f' y : E →L[𝕜] F) y)
+private theorem scale_eq_of_isGoodBall {x y : E}
+    (hJx : ∀ t : ℝ, ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t))
+    (hJy : ∀ t : ℝ, ν (f' y '' closedBall 0 t) = J y * μ (closedBall 0 t))
+    (hf' : HasStrictFDerivAt f (f' y : E →L[𝕜] F) y)
     {r : ℝ} (hgood : IsGoodBall f f' x r) (hy : y ∈ closedBall x r) : J y = J x := by
   obtain ⟨r', hgood'⟩ := exists_isGoodBall hf'
   have ht : 0 < min r r' := lt_min hgood.1 hgood'.1
-  have h1 := image_closedBall_of_isGoodBall μ ν hJx hgood hy (min_le_left r r')
+  have h1 := image_closedBall_of_isGoodBall μ ν hJx hgood ((closedBall_subset_closedBall
+    (min_le_left r r')).trans (IsUltrametricDist.closedBall_eq_of_mem hy).symm.subset)
   have h2 := image_closedBall_of_isGoodBall μ ν hJy hgood'
-    (mem_closedBall_self hgood'.1.le) (min_le_right r r')
+    (closedBall_subset_closedBall (min_le_right r r'))
   rw [h2] at h1
   exact (ENNReal.mul_left_inj (measure_closedBall_pos μ y ht).ne'
     measure_closedBall_lt_top.ne).1 h1
@@ -158,7 +163,8 @@ measurable set `U`. -/
 private noncomputable def imageMeasure (U : Set E) (f : E → F) : Measure E :=
   (ν.comap (U.domRestrict f)).map ((↑) : U → E)
 
-omit [IsUltrametricDist E] [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure] in
+omit [IsUltrametricDist E] [μ.IsAddHaarMeasure] [ν.IsAddLeftInvariant]
+  [IsFiniteMeasureOnCompacts ν] in
 private theorem imageMeasure_apply {U : Set E} (hU : MeasurableSet U) (hcont : ContinuousOn f U)
     (hinj : InjOn f U) (s : Set E) : imageMeasure ν U f s = ν (f '' (s ∩ U)) := by
   have he := hcont.measurableEmbedding hU hinj
@@ -167,28 +173,23 @@ private theorem imageMeasure_apply {U : Set E} (hU : MeasurableSet U) (hcont : C
 
 include μ in
 /-- On a good ball `D` around `x`, the image measure of `f` on `D` is `J x • μ` on `D`. -/
-private theorem imageMeasure_of_isGoodBall {x : E} (hJ : ∀ s, ν (f' x '' s) = J x * μ s) {r : ℝ}
+private theorem imageMeasure_of_isGoodBall {x : E}
+    (hJ : ∀ t : ℝ, ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t)) {r : ℝ}
     (hgood : IsGoodBall f f' x r) :
     imageMeasure ν (closedBall x r) f = (J x • μ).restrict (closedBall x r) := by
   set D := closedBall x r
   have hcont : ContinuousOn f D := continuousOn_of_isGoodBall hgood
   have happly : ∀ s, imageMeasure ν D f s = ν (f '' (s ∩ D)) :=
     imageMeasure_apply ν measurableSet_closedBall hcont (injOn_of_isGoodBall hgood)
-  -- On a closed ball `B`, the intersection `B ∩ D` is empty, `D`, or a sub-ball of `D`.
-  have hball : ∀ y t, 0 < t → ν (f '' (closedBall y t ∩ D)) = J x * μ (closedBall y t ∩ D) := by
-    intro y t ht
-    by_cases hy : y ∈ D
-    · have hinter : closedBall y t ∩ D = closedBall y (min t r) := by
-        simp only [D, IsUltrametricDist.closedBall_eq_of_mem hy]
-        ext z
-        simp [mem_closedBall, le_min_iff]
-      rw [hinter]
-      exact image_closedBall_of_isGoodBall μ ν hJ hgood hy (min_le_right t r)
+  -- A closed ball `B` is contained in `D`, contains `D`, or is disjoint from it.
+  have hball : ∀ y t, ν (f '' (closedBall y t ∩ D)) = J x * μ (closedBall y t ∩ D) := by
+    intro y t
     rcases IsUltrametricDist.closedBall_subset_trichotomy (x := y) (y := x) (r := t) (s := r)
       with h | h | h
-    · exact absurd (h (mem_closedBall_self ht.le)) hy
+    · rw [inter_eq_left.2 h]
+      exact image_closedBall_of_isGoodBall μ ν hJ hgood h
     · rw [inter_eq_right.2 h]
-      exact image_closedBall_of_isGoodBall μ ν hJ hgood (mem_closedBall_self hgood.1.le) le_rfl
+      exact image_closedBall_of_isGoodBall μ ν hJ hgood subset_rfl
     · have hD : closedBall y t ∩ D = ∅ := h.inter_eq
       simp [hD]
   have : IsFiniteMeasure (imageMeasure ν D f) := by
@@ -198,23 +199,25 @@ private theorem imageMeasure_of_isGoodBall {x : E} (hJ : ∀ s, ν (f' x '' s) =
   refine ext_of_generate_finite _
     ((BorelSpace.measurable_eq).trans IsUltrametricDist.borel_eq_generateFrom_closedBall)
     IsUltrametricDist.isPiSystem_closedBall ?_ ?_
-  · rintro _ ⟨y, t, ht, rfl⟩
-    rw [happly, hball y t ht, Measure.restrict_apply measurableSet_closedBall, smul_apply,
+  · rintro _ ⟨y, t, -, rfl⟩
+    rw [happly, hball y t, Measure.restrict_apply measurableSet_closedBall, smul_apply,
       smul_eq_mul]
   · rw [happly, Measure.restrict_apply MeasurableSet.univ, smul_apply, smul_eq_mul, univ_inter]
-    exact image_closedBall_of_isGoodBall μ ν hJ hgood (mem_closedBall_self hgood.1.le) le_rfl
+    exact image_closedBall_of_isGoodBall μ ν hJ hgood subset_rfl
 
 /-- **Change of variables for Haar measure over an ultrametric space.** Let `f` be injective on a
 measurable subset `s` of a proper ultrametric normed space `E`, with an invertible strict
 derivative `f' x` at every `x ∈ s`, and let `f' x` multiply Haar measure by `J x`, in the sense
-that `ν (f' x '' t) = J x * μ t` for every set `t`. Then `∫⁻ x in s, J x ∂μ = ν (f '' s)`.
+that `ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t)` for every radius `t`. Then
+`∫⁻ x in s, J x ∂μ = ν (f '' s)`.
 
 Over a nonarchimedean local field `K`, with `μ = ν` an additive Haar measure on `K ^ d`, the
 linear scaling law makes `J x = |det f' x|_K`; for two different normalizations, `J x` also
 carries their ratio. -/
 theorem lintegral_eq_addHaar_image_of_isUltrametricDist {s : Set E} (hs : MeasurableSet s)
     (hf' : ∀ x ∈ s, HasStrictFDerivAt f (f' x : E →L[𝕜] F) x) (hinj : InjOn f s)
-    (hJ : ∀ x ∈ s, ∀ t, ν (f' x '' t) = J x * μ t) : ∫⁻ x in s, J x ∂μ = ν (f '' s) := by
+    (hJ : ∀ x ∈ s, ∀ t : ℝ, ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t)) :
+    ∫⁻ x in s, J x ∂μ = ν (f '' s) := by
   have hcont : ContinuousOn f s := fun z hz ↦ (hf' z hz).continuousAt.continuousWithinAt
   -- Countably many good balls cover `s`; with the complement of their union they cover `E`.
   choose! r hr using fun x (hx : x ∈ s) ↦ exists_isGoodBall (hf' x hx)
@@ -250,17 +253,19 @@ theorem lintegral_eq_addHaar_image_of_isUltrametricDist {s : Set E} (hs : Measur
       _ = ∫⁻ y in t ∩ closedBall x (r x) ∩ s, J y ∂μ :=
         setLIntegral_congr_fun hm fun y hy ↦
           (scale_eq_of_isGoodBall μ ν (hJ x (hTs hx)) (hJ y hy.2) (hf' y hy.2) hgood hy.1.2).symm
-  rw [← inter_self s, ← imageMeasure_apply ν hs hcont hinj, hext, Measure.restrict_apply hs,
-    withDensity_apply _ (hs.inter hs), inter_self]
+  have h := congrArg (· s) hext
+  rw [imageMeasure_apply ν hs hcont hinj, inter_self, Measure.restrict_apply hs, inter_self,
+    withDensity_apply _ hs] at h
+  exact h.symm
 
 /-- **Change of variables for Haar measure under an analytic map over an ultrametric space.**
 Let `f` be analytic and injective on a measurable subset `s` of a proper ultrametric normed space
 `E`, with invertible derivative `f' x` at every `x ∈ s`, and let `f' x` multiply Haar measure by
-`J x`. Then `∫⁻ x in s, J x ∂μ = ν (f '' s)`. -/
+`J x` on closed balls around `0`. Then `∫⁻ x in s, J x ∂μ = ν (f '' s)`. -/
 theorem lintegral_eq_addHaar_image_of_isUltrametricDist_of_analyticOnNhd {s : Set E}
     (hs : MeasurableSet s) (hf : AnalyticOnNhd 𝕜 f s)
     (hf' : ∀ x ∈ s, HasFDerivAt f (f' x : E →L[𝕜] F) x) (hinj : InjOn f s)
-    (hJ : ∀ x ∈ s, ∀ t, ν (f' x '' t) = J x * μ t) :
+    (hJ : ∀ x ∈ s, ∀ t : ℝ, ν (f' x '' closedBall 0 t) = J x * μ (closedBall 0 t)) :
     ∫⁻ x in s, J x ∂μ = ν (f '' s) :=
   lintegral_eq_addHaar_image_of_isUltrametricDist μ ν hs
     (fun x hx ↦ (hf' x hx).fderiv ▸ (hf x hx).hasStrictFDerivAt) hinj hJ
