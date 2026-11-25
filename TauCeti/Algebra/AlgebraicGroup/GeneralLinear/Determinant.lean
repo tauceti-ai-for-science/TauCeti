@@ -50,6 +50,8 @@ of the coordinate morphism, and hence injectivity of that morphism.
 * `TauCeti.GeneralLinear.determinantPoints`: the induced homomorphism on convolution points.
 * `TauCeti.GeneralLinear.pointsMulEquiv_determinantPoints`: under the standard point
   equivalences, the induced homomorphism is matrix determinant.
+* `TauCeti.GeneralLinear.pointsMulEquiv_determinantPoints_fin_one`: for `n = 1`, the induced
+  unit is the single entry of the one-by-one matrix.
 -/
 
 public section
@@ -235,6 +237,16 @@ theorem pointsMulEquiv_determinantPoints
     determinantPoints_apply_apply, determinantCoordinateMap_ofAdd_one,
     ← determinantGroupLike_val, point_apply_determinantGroupLike,
     Matrix.GeneralLinearGroup.val_det_apply, pointsMulEquiv_apply]
+
+/-- For `GL₁`, the unit attached by `DiagonalizableGroup.pointsMulEquiv` to the image of a point
+under the determinant is the single entry of the corresponding one-by-one matrix. -/
+theorem pointsMulEquiv_determinantPoints_fin_one
+    (f : WithConv (coordinateHopfAlgebra R 1 →ₐ[R] A)) :
+    ((DiagonalizableGroup.pointsMulEquiv (determinantPoints R 1 f)
+        (Multiplicative.ofAdd (1 : ℤ)) : Aˣ) : A) =
+      (pointsMulEquiv 1 f : Matrix (Fin 1) (Fin 1) A) 0 0 := by
+  rw [pointsMulEquiv_determinantPoints, Matrix.GeneralLinearGroup.val_det_apply,
+    Matrix.det_fin_one]
 
 /-- Starting with an invertible matrix, the point induced by the determinant coordinate
 morphism corresponds to its ordinary determinant unit. -/

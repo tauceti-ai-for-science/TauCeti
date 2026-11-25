@@ -25,7 +25,9 @@ A homomorphism of affine group schemes `φ : G → G'` over `K` is given by a bi
 * `φ_𝔸` commutes with the finite and infinite components and with the local components
   `p_v ∘ φ_𝔸 = φ_v ∘ p_v` at every finite and infinite place, where `φ_v` is again
   `BialgHom.mapDomain φ*` on the local points;
-* `φ_𝔸` commutes with the embedding `finiteEmbed` of finite adelic points.
+* `φ_𝔸` commutes with the embedding `finiteEmbed` of finite adelic points;
+* the determinant `GLₙ → 𝔾ₘ` induces the determinant of invertible adelic matrices, and for
+  `n = 1` the single entry of a one-by-one adelic matrix.
 
 Only the bialgebra structure of the coordinate rings is used; for Hopf algebras these are
 homomorphisms of topological groups.
@@ -41,7 +43,7 @@ homomorphisms of topological groups.
 * `TauCeti.AdelicPoints.map_determinantCoordinateMap`,
   `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap`: the determinant
   `GLₙ → 𝔾ₘ` induces on adelic points the determinant of invertible adelic matrices.
-* `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap_one`: for `n = 1`, the
+* `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap_fin_one`: for `n = 1`, the
   identification of `GL₁(𝔸_K)` with the ideles `𝔸_K^×` by the entry of a one-by-one matrix.
 
 ## References
@@ -141,7 +143,7 @@ theorem map_finiteEmbed (φ : H' →ₐc[K] H) (x : FiniteAdelicPoints R K H) :
     map R φ (finiteEmbed R K H x) = finiteEmbed R K H' (BialgHom.mapDomain φ x) :=
   ofConv_injective (AlgHom.ext fun h ↦ by simp [CoalgHomClass.counit_comp_apply])
 
-/-! ### The determinant of `GL₁` -/
+/-! ### The determinant of `GLₙ` -/
 
 section GeneralLinear
 
@@ -155,8 +157,9 @@ theorem map_determinantCoordinateMap (n : ℕ) :
 
 open GeneralLinear in
 /-- The determinant `det : GLₙ → 𝔾ₘ` induces on adelic points the determinant of invertible adelic
-matrices, under the canonical identifications of `GLₙ(𝔸_K)` with `GLₙ(𝔸_K)` and of `𝔾ₘ(𝔸_K)`
-with `𝔸_K^×`. -/
+matrices, under the canonical identifications of the adelic points `GLₙ(𝔸_K)` of the group
+scheme with the invertible matrices `(Matrix (Fin n) (Fin n) 𝔸_K)ˣ` (via
+`GeneralLinear.pointsMulEquiv`) and of `𝔾ₘ(𝔸_K)` with `𝔸_K^×`. -/
 theorem pointsMulEquiv_map_determinantCoordinateMap (n : ℕ)
     (x : AdelicPoints R K (coordinateHopfAlgebra K n)) :
     DiagonalizableGroup.pointsMulEquiv (map R (determinantCoordinateMap K n).hom x)
@@ -168,13 +171,12 @@ open GeneralLinear in
 /-- For `GL₁` the determinant `det : GL₁ → 𝔾ₘ` induces on adelic points the identity of the
 ideles under the canonical identification of `GL₁(𝔸_K)` with `𝔸_K^×`: the idele given by the
 image of `x` in `𝔾ₘ(𝔸_K)` is the single entry of the one-by-one matrix `x`. -/
-theorem pointsMulEquiv_map_determinantCoordinateMap_one
+theorem pointsMulEquiv_map_determinantCoordinateMap_fin_one
     (x : AdelicPoints R K (coordinateHopfAlgebra K 1)) :
     ((DiagonalizableGroup.pointsMulEquiv (map R (determinantCoordinateMap K 1).hom x)
         (Multiplicative.ofAdd 1) : (AdeleRing R K)ˣ) : AdeleRing R K) =
       (pointsMulEquiv 1 x : Matrix (Fin 1) (Fin 1) (AdeleRing R K)) 0 0 := by
-  rw [pointsMulEquiv_map_determinantCoordinateMap, Matrix.GeneralLinearGroup.val_det_apply,
-    Matrix.det_fin_one]
+  rw [map_determinantCoordinateMap, pointsMulEquiv_determinantPoints_fin_one]
 
 end GeneralLinear
 
