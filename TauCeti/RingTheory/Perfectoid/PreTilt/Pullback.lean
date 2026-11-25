@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 public import TauCeti.RingTheory.Pullback
 
-import Mathlib.NumberTheory.Basic
-
 /-!
 # Tilts of fibre products
 
@@ -25,10 +23,11 @@ the coordinates of `x` (`PreTilt.coeff_eq_mk_untilt_iterate`), and the sharp map
 (`PreTilt.untilt_natural`). Given `a ∈ A♭` and `b ∈ B♭` with the same image in `A'♭`, the
 elements `f ((a ^ (1 / p ^ n))♯)` and `g ((b ^ (1 / p ^ n))♯)` agree modulo `p`, so their
 `p ^ n`-th powers `f (a♯)` and `g (b♯)` agree modulo `p ^ (n + 1)`; as `A'` is separated,
-`f (a♯) = g (b♯)`. The pairs `((a ^ (1 / p ^ n))♯, (b ^ (1 / p ^ n))♯)` therefore form a
-compatible system of `p`-th roots in `C`, whose reduction modulo `p` is a preimage of `(a, b)`; and
-an element of `C♭` is determined by the sharps of its roots, whose components in `A` and `B` are
-the sharps of its images. Only the injectivity uses the completeness of `C`.
+`f (a♯) = g (b♯)` (`PreTilt.map_untilt_eq_of_map_eq`). The pairs
+`((a ^ (1 / p ^ n))♯, (b ^ (1 / p ^ n))♯)` therefore form a compatible system of `p`-th roots in
+`C`, whose reduction modulo `p` is a preimage of `(a, b)`; and an element of `C♭` is determined by
+the sharps of its roots, whose components in `A` and `B` are the sharps of its images. Only the
+injectivity uses the completeness of `C`.
 
 The fibre product `C` is `p`-adically complete when `A` and `B` are, `A'` is `p`-adically
 separated and the `p`-power torsion of `A'` is bounded
@@ -44,6 +43,9 @@ integral perfectoid rings.
 * `PreTilt.coe_pullbackEquiv_apply`, `PreTilt.pullbackFst_comp_pullbackEquiv`,
   `PreTilt.pullbackSnd_comp_pullbackEquiv`: the components of the isomorphism are the maps of
   tilts induced by the projections.
+* `PreTilt.map_pullbackFst_pullbackEquiv_symm_apply`,
+  `PreTilt.map_pullbackSnd_pullbackEquiv_symm_apply`: the inverse sends `(a, b)` to an element
+  with images `a` and `b`.
 * `PreTilt.coe_untilt_pullbackEquiv_symm`: the sharp of the element of `C♭` corresponding to
   `(a, b)` is `(a♯, b♯)`.
 
@@ -96,22 +98,6 @@ private theorem pullbackHom_injective
 
 variable [IsHausdorff (span {(p : A')}) A']
 
-/-- If `a ∈ A♭` and `b ∈ B♭` have the same image in `A'♭` and `A'` is `p`-adically separated,
-then `f (a♯) = g (b♯)`: the images of the sharps of their `p ^ m`-th roots agree modulo `p`, so
-`f (a♯)` and `g (b♯)` agree modulo `p ^ (m + 1)` for every `m`. -/
-private theorem map_untilt_eq_of_map_eq {a : PreTilt A p} {b : PreTilt B p}
-    (hab : map p f a = map p g b) : f a.untilt = g b.untilt := by
-  refine sub_eq_zero.mp <| IsHausdorff.haus (I := span {(p : A')}) inferInstance _ fun m ↦ ?_
-  rw [TauCeti.sModEq_span_singleton_pow_iff, sub_zero]
-  have hm : (p : A') ∣ f (untilt ((frobeniusEquiv (PreTilt A p) p).symm^[m] a)) -
-      g (untilt ((frobeniusEquiv (PreTilt B p) p).symm^[m] b)) := by
-    rw [← mem_span_singleton, ← Ideal.Quotient.eq, ← ModP.map_mk, ← ModP.map_mk,
-      ← coeff_eq_mk_untilt_iterate, ← coeff_eq_mk_untilt_iterate, ← coeff_map, ← coeff_map, hab]
-  have h := dvd_sub_pow_of_dvd_sub hm m
-  rw [← map_pow f, ← map_pow g, untilt_iterate_frobeniusEquiv_symm_pow,
-    untilt_iterate_frobeniusEquiv_symm_pow] at h
-  exact (pow_dvd_pow _ m.le_succ).trans h
-
 /-- The comparison homomorphism is surjective: for `a ∈ A♭` and `b ∈ B♭` with the same image in
 `A'♭`, the pairs of sharps of their `p`-power roots form a compatible system of `p`-th roots in the
 fibre product, whose reduction modulo `p` is a preimage of `(a, b)`. -/
@@ -120,7 +106,7 @@ private theorem pullbackHom_surjective : Function.Surjective (pullbackHom p f g)
   -- the compatible system `((a ^ (1 / p ^ n))♯, (b ^ (1 / p ^ n))♯)ₙ` in the fibre product
   have hc (n : ℕ) : (untilt ((frobeniusEquiv (PreTilt A p) p).symm^[n] a),
       untilt ((frobeniusEquiv (PreTilt B p) p).symm^[n] b)) ∈ f.pullback g :=
-    RingHom.mem_pullback_iff.mpr <| map_untilt_eq_of_map_eq p f g <| by
+    RingHom.mem_pullback_iff.mpr <| map_untilt_eq_of_map_eq <| by
       simp only [RingHom.map_iterate_frobeniusEquiv_symm, RingHom.mem_pullback_iff.mp hab]
   let c (n : ℕ) : f.pullback g := ⟨_, hc n⟩
   have hcp (n : ℕ) : Ideal.Quotient.mk (span {(p : f.pullback g)}) (c (n + 1)) ^ p =
@@ -145,7 +131,7 @@ a ring isomorphism `(A ×_{A'} B)♭ ≃+* A♭ ×_{A'♭} B♭`. -/
 noncomputable def pullbackEquiv :
     PreTilt (f.pullback g) p ≃+* (map p f).pullback (map p g) :=
   RingEquiv.ofBijective (pullbackHom p f g)
-    ⟨pullbackHom_injective p f g, pullbackHom_surjective p f g⟩
+    (show Function.Bijective _ from ⟨pullbackHom_injective p f g, pullbackHom_surjective p f g⟩)
 
 variable {p f g}
 
@@ -155,8 +141,7 @@ the two projections. -/
 theorem coe_pullbackEquiv_apply (x : PreTilt (f.pullback g) p) :
     (pullbackEquiv p f g x : PreTilt A p × PreTilt B p) =
       (map p (f.pullbackFst g) x, map p (f.pullbackSnd g) x) := by
-  rw [pullbackEquiv]
-  exact RingHom.coe_pullbackLift_apply ..
+  rw [pullbackEquiv, RingEquiv.ofBijective_apply, RingHom.coe_pullbackLift_apply]
 
 /-- The first projection of `PreTilt.pullbackEquiv` is the map of tilts induced by the first
 projection of the fibre product. -/
@@ -174,14 +159,31 @@ theorem pullbackSnd_comp_pullbackEquiv :
       map p (f.pullbackSnd g) :=
   RingHom.ext fun x ↦ congrArg Prod.snd (coe_pullbackEquiv_apply x)
 
+/-- The image in `A♭` of the element of `(A ×_{A'} B)♭` corresponding to
+`(a, b) ∈ A♭ ×_{A'♭} B♭` is `a`. -/
+@[simp]
+theorem map_pullbackFst_pullbackEquiv_symm_apply (y : (map p f).pullback (map p g)) :
+    map p (f.pullbackFst g) ((pullbackEquiv p f g).symm y) =
+      (y : PreTilt A p × PreTilt B p).1 := by
+  rw [← pullbackFst_comp_pullbackEquiv, RingHom.comp_apply, RingEquiv.coe_toRingHom,
+    RingEquiv.apply_symm_apply, RingHom.pullbackFst_apply]
+
+/-- The image in `B♭` of the element of `(A ×_{A'} B)♭` corresponding to
+`(a, b) ∈ A♭ ×_{A'♭} B♭` is `b`. -/
+@[simp]
+theorem map_pullbackSnd_pullbackEquiv_symm_apply (y : (map p f).pullback (map p g)) :
+    map p (f.pullbackSnd g) ((pullbackEquiv p f g).symm y) =
+      (y : PreTilt A p × PreTilt B p).2 := by
+  rw [← pullbackSnd_comp_pullbackEquiv, RingHom.comp_apply, RingEquiv.coe_toRingHom,
+    RingEquiv.apply_symm_apply, RingHom.pullbackSnd_apply]
+
 /-- The sharp of the element of `(A ×_{A'} B)♭` corresponding to `(a, b) ∈ A♭ ×_{A'♭} B♭` is
 `(a♯, b♯)`. -/
 @[simp]
 theorem coe_untilt_pullbackEquiv_symm (y : (map p f).pullback (map p g)) :
     (((pullbackEquiv p f g).symm y).untilt : A × B) =
       ((y : PreTilt A p × PreTilt B p).1.untilt, (y : PreTilt A p × PreTilt B p).2.untilt) := by
-  have h := coe_pullbackEquiv_apply ((pullbackEquiv p f g).symm y)
-  rw [RingEquiv.apply_symm_apply] at h
-  rw [coe_untilt_pullback, h]
+  rw [coe_untilt_pullback, map_pullbackFst_pullbackEquiv_symm_apply,
+    map_pullbackSnd_pullbackEquiv_symm_apply]
 
 end PreTilt

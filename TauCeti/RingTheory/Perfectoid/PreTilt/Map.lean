@@ -10,6 +10,9 @@ public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Teichmuller
 public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
+import Mathlib.NumberTheory.Basic
+import TauCeti.RingTheory.AdicCompletion.Pi
+
 /-!
 # Functoriality of the tilt, the sharp map and Fontaine's map
 
@@ -42,6 +45,8 @@ the corresponding constructions on the rings themselves.
 * `PreTilt.coeff_map`: the coordinates of `PreTilt.map p f x` are the reductions of those of `x`.
 * `PreTilt.map_id`, `PreTilt.map_comp`: functoriality.
 * `PreTilt.untilt_natural`: naturality of the sharp map, `(PreTilt.map p f x)♯ = f (x♯)`.
+* `PreTilt.map_untilt_eq_of_map_eq`: if `f : A →+* C` and `g : B →+* C` identify `a ∈ A♭` and
+  `b ∈ B♭` in `C♭`, and `C` is `p`-adically separated, then `f (a♯) = g (b♯)`.
 * `WittVector.theta_natural`: naturality of Fontaine's map.
 
 ## References
@@ -122,6 +127,26 @@ theorem untilt_natural [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span
     ext n
     simp [ModP.map]
   · rw [← Ideal.map_le_iff_le_comap, Ideal.map_span, Set.image_singleton, map_natCast]
+
+/-- If `a ∈ A♭` and `b ∈ B♭` have the same image in `C♭` under ring homomorphisms
+`f : A →+* C` and `g : B →+* C`, and `C` is only `p`-adically separated, then
+`f (a♯) = g (b♯)`: the images of the sharps of their `p ^ m`-th roots agree modulo `p`, so
+`f (a♯)` and `g (b♯)` agree modulo `p ^ (m + 1)` for every `m`. When `C` is `p`-adically
+complete this also follows from `PreTilt.untilt_natural`. -/
+theorem map_untilt_eq_of_map_eq [IsAdicComplete (span {(p : A)}) A]
+    [IsAdicComplete (span {(p : B)}) B] [IsHausdorff (span {(p : C)}) C] {f : A →+* C}
+    {g : B →+* C} {a : PreTilt A p} {b : PreTilt B p} (hab : map p f a = map p g b) :
+    f a.untilt = g b.untilt := by
+  refine sub_eq_zero.mp <| IsHausdorff.haus (I := span {(p : C)}) inferInstance _ fun m ↦ ?_
+  rw [TauCeti.sModEq_span_singleton_pow_iff, sub_zero]
+  have hm : (p : C) ∣ f (untilt ((frobeniusEquiv (PreTilt A p) p).symm^[m] a)) -
+      g (untilt ((frobeniusEquiv (PreTilt B p) p).symm^[m] b)) := by
+    rw [← mem_span_singleton, ← Ideal.Quotient.eq, ← ModP.map_mk, ← ModP.map_mk,
+      ← coeff_eq_mk_untilt_iterate, ← coeff_eq_mk_untilt_iterate, ← coeff_map, ← coeff_map, hab]
+  have h := dvd_sub_pow_of_dvd_sub hm m
+  rw [← map_pow f, ← map_pow g, untilt_iterate_frobeniusEquiv_symm_pow,
+    untilt_iterate_frobeniusEquiv_symm_pow] at h
+  exact (pow_dvd_pow _ m.le_succ).trans h
 
 end PreTilt
 
