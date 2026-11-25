@@ -621,13 +621,17 @@ theorem augmentation_sum_apply_apply {s : Finset E} (hs : (s : Set E) ⊆ Ω) (�
     (c : F) : augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) c = ∑ x ∈ s, ℓ x c := by
   let A : E → 𝓓^{n}(Ω, F) →+ V := fun x ↦
     (ℓ x).comp ((Pi.evalAddMonoidHom (fun _ ↦ F) x).comp (FunLike.coeAddMonoidHom _ _ _))
-  have hA (x : E) : ⇑(A x) = fun φ : 𝓓^{n}(Ω, F) ↦ ℓ x (φ x) := rfl
+  have hA (x : E) : ⇑(A x) = fun φ : 𝓓^{n}(Ω, F) ↦ ℓ x (φ x) := by
+    ext φ
+    simp [A]
   have h : (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) = ∑ x ∈ s, ⇑(A x) := by
     ext φ
     simp [hA]
-  rw [h, augmentation_sum A (fun x _ ↦ hA x ▸ isCompact_dsupport_apply_apply x (ℓ x))
-    fun x hx ↦ hA x ▸ (dsupport_apply_apply_subset (ℓ x)).trans (singleton_subset_iff.2 (hs hx))]
-  exact Finset.sum_congr rfl fun x hx ↦ hA x ▸ augmentation_apply_apply (hs hx) (ℓ x) c
+  rw [h, augmentation_sum A (fun x _ ↦ by rw [hA]; exact isCompact_dsupport_apply_apply x (ℓ x))
+    fun x hx ↦ by
+      rw [hA]
+      exact (dsupport_apply_apply_subset (ℓ x)).trans (singleton_subset_iff.2 (hs hx))]
+  exact Finset.sum_congr rfl fun x hx ↦ by rw [hA, augmentation_apply_apply (hs hx)]
 
 /-- For `x ∈ Ω` and a continuous linear map `ℓ`, the point evaluation `φ ↦ ℓ (φ x)` has
 augmentation `ℓ c` at `c`. -/

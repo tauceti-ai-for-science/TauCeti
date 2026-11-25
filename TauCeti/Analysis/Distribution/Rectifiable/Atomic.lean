@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Rectifiable.Integral
-import TauCeti.MeasureTheory.Measure.Count.Integrable
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Codiscrete
 
 /-!
@@ -89,9 +89,9 @@ variable {θ : V → ℤ}
 at only finitely many points of each compact subset of `Ω`. -/
 private theorem finite_inter_setOf_ne_zero (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[0])
     {K : Set V} (hK : IsCompact K) (hKΩ : K ⊆ Ω) : (K ∩ {x | θ x ≠ 0}).Finite := by
-  have hint := hθ.integrableOn_compact_subset hKΩ hK
-  rw [Measure.euclideanHausdorffMeasure_zero, hausdorffMeasure_zero_eq_count] at hint
-  exact hint.finite_inter_support_of_count
+  rw [Measure.euclideanHausdorffMeasure_zero, hausdorffMeasure_zero_eq_count] at hθ
+  rw [inter_comm]
+  exact Measure.count_apply_lt_top.1 (hθ.measure_setOf_intCast_ne_zero_inter_ne_top hK hKΩ).lt_top
 
 /-- The points of `Ω` where a locally integrable integer multiplicity is nonzero are isolated: each
 point of `Ω` has a closed ball around it inside `Ω` containing no other such point. -/
