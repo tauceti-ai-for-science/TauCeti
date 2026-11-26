@@ -36,6 +36,9 @@ absolute values.
   embedding of a countable field to a homomorphism, respectively an isomorphism.
 * `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same,
   with a transcendental element sent to a prescribed transcendental complex number.
+* `TauCeti.Complex.exists_ringEquiv_apply_eq`: for embeddings `σ : k → ℂ` and `τ : k → E` of a
+  countable field into `ℂ` and into an algebraically closed field `E` with `#E = 𝔠`, some
+  isomorphism `ℂ ≃+* E` carries `σ` to `τ`.
 
 ## References
 
@@ -101,5 +104,15 @@ isomorphism `E ≃ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algEquiv_apply_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z :=
   hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
+
+/-- Let `k` be a countable field with embeddings `σ : k →+* ℂ` and `τ : k →+* E` into `ℂ` and into
+an algebraically closed field `E` with `#E = 𝔠`, for instance `ℂ` itself or an algebraic closure
+of `ℚ_[p]`. Some field isomorphism `ι : ℂ ≃+* E` satisfies `ι (σ x) = τ x` for all `x`. -/
+theorem exists_ringEquiv_apply_eq {k : Type*} [Field k] [Countable k] [Field E] [IsAlgClosed E]
+    (hE : #E = 𝔠) (σ : k →+* ℂ) (τ : k →+* E) : ∃ ι : ℂ ≃+* E, ∀ x, ι (σ x) = τ x := by
+  let := σ.toAlgebra
+  let := τ.toAlgebra
+  obtain ⟨φ⟩ := nonempty_algEquiv (k := k) hE
+  exact ⟨φ.symm.toRingEquiv, fun x ↦ φ.symm.commutes x⟩
 
 end TauCeti.Complex
