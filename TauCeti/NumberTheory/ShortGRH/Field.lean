@@ -445,12 +445,6 @@ theorem placeClass_placeOfInt_eq_neg_one_iff {ν : ℤ} :
 
 /-! ### 2.3 (e): roots of unity -/
 
-/-- A primitive `n`-th root of unity in a number field `L` gives `φ(n) ≤ [L : ℚ]`. -/
-private theorem totient_le_finrank {L : Type*} [Field L] [NumberField L] {x : L} {n : ℕ}
-    (hn : 0 < n) (hx : IsPrimitiveRoot x n) : n.totient ≤ Module.finrank ℚ L := by
-  rw [← natDegree_cyclotomic n ℚ, cyclotomic_eq_minpoly_rat hx hn]
-  exact minpoly.natDegree_le x
-
 /-- **2.3 (e)**: every root of unity of `E` is a power of `ζ`. -/
 theorem exists_zeta_pow_eq {y : P.E s} (hy : IsOfFinOrder y) : ∃ k < P.q₁ s, P.ζ s ^ k = y := by
   refine (P.isPrimitiveRoot_ζ s).eq_pow_of_pow_eq_one ?_
@@ -464,18 +458,14 @@ theorem exists_zeta_pow_eq {y : P.E s} (hy : IsOfFinOrder y) : ∃ k < P.q₁ s,
       ((IsPrimitiveRoot.orderOf y).map_of_injective (P.toCyclotomic s).injective)
     rw [IsCyclotomicExtension.Rat.torsionOrder_eq (n := P.q₁ s * P.d)] at this
     simpa [h_even] using this
-  -- So `y ^ q₁` is a primitive `d`-th root of unity, and `ζ y ^ q₁` a primitive `q₁ d`-th one.
+  -- So `y ^ q₁` is a primitive `d`-th root of unity.
   have h_d : IsPrimitiveRoot (y ^ P.q₁ s) P.d := IsPrimitiveRoot.iff_orderOf.2 <|
     orderOf_eq_prime (by rwa [← pow_mul, ← orderOf_dvd_iff_pow_eq_one]) h_ne
-  have h_prod : IsPrimitiveRoot (P.ζ s * y ^ P.q₁ s) (P.q₁ s * P.d) := by
-    rw [IsPrimitiveRoot.iff_orderOf, (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime
-      (by rw [(P.isPrimitiveRoot_ζ s).eq_orderOf.symm, h_d.eq_orderOf.symm]
-          exact P.coprime_q₁_d s),
-      ← (P.isPrimitiveRoot_ζ s).eq_orderOf, ← h_d.eq_orderOf]
   -- Then `φ(q₁) (d - 1) = φ(q₁ d) ≤ [E : ℚ] = 2 φ(q₁)`, against `d > 64`.
-  have h_le := totient_le_finrank (Nat.pos_of_ne_zero (NeZero.ne _)) h_prod
-  rw [finrank_rat_E, Nat.totient_mul (P.coprime_q₁_d s), Nat.totient_prime P.prime_d,
-    mul_comm 2] at h_le
+  have h_le := (P.isPrimitiveRoot_ζ s).lcm_totient_le_finrank (K := ℚ) h_d
+    (cyclotomic.irreducible_rat (Nat.lcm_pos (NeZero.pos _) P.prime_d.pos))
+  rw [(P.coprime_q₁_d s).lcm_eq_mul, finrank_rat_E, Nat.totient_mul (P.coprime_q₁_d s),
+    Nat.totient_prime P.prime_d, mul_comm 2] at h_le
   have := Nat.le_of_mul_le_mul_left h_le (Nat.totient_pos.2 (NeZero.pos _))
   have := P.sixty_four_lt_d
   omega
