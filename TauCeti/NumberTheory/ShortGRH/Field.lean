@@ -103,6 +103,7 @@ variable (P : Parameters) (s : ℕ)
 /-- The square root `√-d = i √d ∈ ℂ`. -/
 def sqrtNegD : ℂ := Complex.I * (Real.sqrt P.d : ℂ)
 
+/-- `(√-d) ^ 2 = -d`. -/
 theorem sqrtNegD_sq : P.sqrtNegD ^ 2 = -(P.d : ℂ) := by
   rw [sqrtNegD, mul_pow, Complex.I_sq, ← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
   push_cast
@@ -111,8 +112,10 @@ theorem sqrtNegD_sq : P.sqrtNegD ^ 2 = -(P.d : ℂ) := by
 /-- The imaginary quadratic field `K = ℚ(√-d) ⊆ ℂ`. -/
 def K : IntermediateField ℚ ℂ := ℚ⟮P.sqrtNegD⟯
 
+/-- `√-d ∈ K`. -/
 theorem sqrtNegD_mem_K : P.sqrtNegD ∈ P.K := mem_adjoin_simple_self ℚ _
 
+/-- The minimal polynomial of `√-d` over `ℚ` is `X ^ 2 + d`, which has no rational root. -/
 theorem minpoly_sqrtNegD : minpoly ℚ P.sqrtNegD = X ^ 2 + C (P.d : ℚ) := by
   have h_deg : (X ^ 2 + C (P.d : ℚ)).natDegree = 2 := by compute_degree!
   refine (minpoly.eq_of_irreducible_of_monic ?_ (by simp [sqrtNegD_sq]) (by monicity!)).symm
@@ -121,9 +124,11 @@ theorem minpoly_sqrtNegD : minpoly ℚ P.sqrtNegD = X ^ 2 + C (P.d : ℚ) := by
   simp only [IsRoot, eval_add, eval_pow, eval_X, eval_C] at hx
   nlinarith [sq_nonneg x]
 
+/-- `√-d` is integral over `ℚ`. -/
 theorem isIntegral_sqrtNegD : IsIntegral ℚ P.sqrtNegD :=
   ⟨X ^ 2 + C (P.d : ℚ), monic_X_pow_add_C _ two_ne_zero, by simp [sqrtNegD_sq]⟩
 
+/-- `[K : ℚ] = 2`. -/
 theorem finrank_K : Module.finrank ℚ P.K = 2 := by
   rw [K, adjoin.finrank P.isIntegral_sqrtNegD, minpoly_sqrtNegD]
   compute_degree!
@@ -146,6 +151,7 @@ theorem sqrtNegD_mem_complexField_iff {m : ℕ} [NeZero m] :
     isPrimitiveRoot_complexRoot P.isFundamentalDiscr_neg_d (by simp [sqrtNegD_sq])]
   simp
 
+/-- `K ⊆ ℚ(ζ_m)` when `d ∣ m`. -/
 theorem K_le_complexField {m : ℕ} [NeZero m] (h : P.d ∣ m) : P.K ≤ complexField m :=
   adjoin_simple_le_iff.2 ((P.sqrtNegD_mem_complexField_iff).2 h)
 
@@ -204,6 +210,7 @@ instance : IsAbelianGalois P.K (P.E s) := IsCyclotomicExtension.isAbelianGalois 
 /-- The chosen primitive `q₁`-th root of unity `ζ ∈ E`. -/
 def ζ : P.E s := IsCyclotomicExtension.zeta (P.q₁ s) P.K (P.E s)
 
+/-- `ζ` is a primitive `q₁`-th root of unity. -/
 theorem isPrimitiveRoot_ζ : IsPrimitiveRoot (P.ζ s) (P.q₁ s) :=
   IsCyclotomicExtension.zeta_spec (P.q₁ s) P.K (P.E s)
 
@@ -215,9 +222,11 @@ theorem irreducible_cyclotomic : Irreducible (cyclotomic (P.q₁ s) P.K) :=
   irreducible_cyclotomic_of_inf_eq_bot P.K (P.K_inf_complexField fun h ↦
     (Nat.not_coprime_of_dvd_of_dvd P.prime_d.one_lt dvd_rfl h) (P.coprime_q₁_d s).symm)
 
+/-- `[E : K] = φ(q₁)`. -/
 theorem finrank_E : Module.finrank P.K (P.E s) = (P.q₁ s).totient :=
   IsCyclotomicExtension.finrank _ (P.irreducible_cyclotomic s)
 
+/-- `[E : ℚ] = 2 φ(q₁)`. -/
 theorem finrank_rat_E : Module.finrank ℚ (P.E s) = 2 * (P.q₁ s).totient := by
   rw [← Module.finrank_mul_finrank ℚ P.K, P.finrank_K, finrank_E]
 
@@ -343,6 +352,7 @@ def cmType : TauCeti.CMType (P.E s) where
       refine iff_of_true rfl fun h' ↦ hK ?_
       rwa [h'] at h
 
+/-- The CM type `cmType` is the set of the chosen embeddings `Φ_v`. -/
 theorem coe_cmType : (P.cmType s : Set (P.E s →+* ℂ)) = Set.range (P.phi s) := (rfl)
 
 /-! ### 2.3 (c): the number of places -/
@@ -399,6 +409,7 @@ theorem isUnit_intCast_of_isCoprime {ν : ℤ} (h : IsCoprime ν P.q₀) :
   push_cast
   exact h.symm.mul_left ((h3.pow_left).mul_left h2.pow_left)
 
+/-- For `ν` prime to `q₀`, the place `[ν]` corresponds to the class of `ν` in `(ℤ/q₁)ˣ`. -/
 theorem placeMulEquiv_placeOfInt {ν : ℤ} (h : IsCoprime ν P.q₀) :
     (P.placeMulEquiv s (P.placeOfInt s ν) : ZMod (P.q₁ s)) = ν := by
   simp [placeOfInt, P.isUnit_intCast_of_isCoprime s h]

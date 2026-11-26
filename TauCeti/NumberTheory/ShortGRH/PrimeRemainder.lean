@@ -85,9 +85,7 @@ the principal one. It is entire in both cases. -/
 @[expose] def entireL {N : ℕ} [NeZero N] (ψ : DirichletCharacter ℂ N) : ℂ → ℂ :=
   if ψ = 1 then LFunctionTrivChar₁ N else ψ.LFunction
 
-variable (d : ℕ) [hd : Fact d.Prime]
-
-instance : NeZero d := ⟨hd.out.ne_zero⟩
+variable (d : ℕ) [Fact d.Prime]
 
 /-- The Legendre symbol `χ_K = (·/d)` as a complex Dirichlet character modulo the prime `d`. -/
 def chiK : DirichletCharacter ℂ d := (quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)

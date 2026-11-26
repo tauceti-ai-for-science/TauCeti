@@ -110,6 +110,7 @@ structure Parameters where
 `q₁(s) / q₀`. -/
 @[expose] def towerDegree (s : ℕ) : ℕ := 3 ^ (Nat.log 3 s + 5) * 2 ^ s
 
+/-- `T(s) = 3 l₀(s) 2 ^ s`. -/
 theorem towerDegree_eq (s : ℕ) : towerDegree s = 3 * l₀ s * 2 ^ s := by
   rw [towerDegree, l₀, ← pow_succ']
 
@@ -149,8 +150,10 @@ instance (s : ℕ) : NeZero (P.q₁ s) := ⟨mul_ne_zero (NeZero.ne _) (NeZero.n
 
 instance (s : ℕ) : NeZero (P.q₂ s) := ⟨pow_ne_zero _ (mul_ne_zero (NeZero.ne _) P.prime_d.ne_zero)⟩
 
+/-- Every divisor of `18480` divides `q₀`. -/
 theorem dvd_q₀_of_dvd_18480 {m : ℕ} (hm : m ∣ 18480) : m ∣ P.q₀ := hm.trans P.dvd_q₀
 
+/-- `q₀ ∣ q₁(s)`. -/
 theorem q₀_dvd_q₁ (s : ℕ) : P.q₀ ∣ P.q₁ s := dvd_mul_right _ _
 
 /-- `d ≡ 7 (mod 8)`, since `16 ∣ q₀ ∣ 2 (d + 1)`. -/
@@ -163,6 +166,7 @@ theorem sixty_four_lt_d : 64 < P.d := by
   have := Nat.le_of_dvd (by omega) (P.dvd_q₀.trans P.dvd_two_mul_succ)
   omega
 
+/-- `d` is odd. -/
 theorem odd_d : Odd P.d := Nat.odd_iff.2 (by have := P.d_mod_eight; omega)
 
 /-- `2 ^ (s + 1) ∣ q₁(s)`. -/
